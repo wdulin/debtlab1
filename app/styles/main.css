@@ -1,0 +1,17 @@
+
+body {
+    background: #efefef;
+}
+
+#canvas {
+    background: #ffffff;
+    -webkit-box-shadow: 4px 4px 8px rgba(0,0,0,0.5);
+    -moz-box-shadow: 4px 4px 8px rgba(0,0,0,0.5);
+     box-shadow: 4px 4px 8px rgba(0,0,0,0.5);
+     border-radius: 16px; 
+     -moz-border-radius: 16px; 
+     -webkit-border-radius: 16px; 
+     border: 1px solid #800000;
+     margin: 10px;
+}
+    
