@@ -1,6 +1,52 @@
 var canvas = document.getElementById('canvas'),
     context = canvas.getContext('2d'),
-    title = 'Debt Laboratory';
+    title = 'Debt Laboratory',
+    startButton = document.getElementById('start-button'),
+    resetButton = document.getElementById('reset-button'),
+    timeDisplay = document.getElementById('main-time'),
+    currTime = new Date(),
+    lastTime = 0,
+    lastCount = 0,
+    running = false;
+    
+    
+function incDay() {
+    var d,m;
+    currTime = new Date(currTime.getTime() + ( 60 * 60 * 1000 * 24));
+    d = currTime.getDate()
+    m = currTime.getMonth() + 1
+    
+    
+    return ((m < 10 ? "0" + m : "" + m) + "-" + (d < 10 ? "0" + d : "" + d) + "-" + currTime.getFullYear());
+    
+}
+    
+function animate(time) {
+    lastCount += (time - lastTime);
+    lastTime = time;
+    if (running) {
+        if (lastCount > 100) {
+         timeDisplay.innerHTML = incDay();
+         lastCount = 0;
+        }
+    }
+    
+    window.requestNextAnimationFrame(animate);
+}    
+
+startButton.onclick = function(e) {
+   running = running ? false : true;
+   if (running) {
+       startButton.value = 'Pause';
+   } else {
+       startButton.value = 'Go';
+   }
+}
+
+resetButton.onclick = function(e) {
+   currTime = new Date(2012, 0, 1);
+   timeDisplay.innerHTML = incDay();
+}
     
 window.addEventListener("resize", OnResizeCalled, false);
     
@@ -71,9 +117,13 @@ function draw() {
     context.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
     drawTitle(title);
+    currTime = new Date(2012, 0, 1);
+    timeDisplay.innerHTML = incDay();
 }
 
 OnResizeCalled();
 
 draw();
+
+window.requestNextAnimationFrame(animate);
 

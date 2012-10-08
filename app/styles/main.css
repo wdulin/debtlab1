@@ -14,4 +14,47 @@ body {
      border: 1px solid #800000;
      margin: 28px;
 }
+
+#control-bar {
+   position: absolute;
+   bottom: 80px;
+   left: 30%;
+}
+
+#start-button {
+      color: #fff;
+      font: bold;
+      font-size: 2.1em;
+      width: 160px;
+      background-color: green;
+      
+}
+
+#reset-button {
+      color: #fff;
+      font: bold;
+      font-size: 2.1em;
+      width: 160px;
+      background-color: blue;
+      
+}
+
+#main-time {
+    position: absolute;
+    top: 120px;
+    left: 36%;
+    font-size: 2.8em;
+    font-family: san-serif;
+    width: 260px;
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
+    background-color: #efefef;
+    border-radius: 5px; 
+    -moz-border-radius: 5px; 
+    -webkit-border-radius: 5px; 
+    color: black;
+    text-align: center;
+}
+    
     
