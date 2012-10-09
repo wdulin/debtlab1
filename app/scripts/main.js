@@ -4,35 +4,49 @@ var canvas = document.getElementById('canvas'),
     startButton = document.getElementById('start-button'),
     resetButton = document.getElementById('reset-button'),
     timeDisplay = document.getElementById('main-time'),
+    fpsDisplay = document.getElementById('fps-display'),
     currTime = new Date(),
     lastTime = 0,
     lastCount = 0,
+    tplTime = _.template("<%= m %>-<%= d %>-<%= y %>"),
+    tplFps = _.template("fps:<%= fps %>"),
+    DAY_MS = 60 * 60 * 1000 * 24,
     running = false;
     
     
 function incDay() {
-    var d,m;
-    currTime = new Date(currTime.getTime() + ( 60 * 60 * 1000 * 24));
-    d = currTime.getDate()
-    m = currTime.getMonth() + 1
+    var d,m,y;
+    currTime = new Date(currTime.getTime() + DAY_MS);
+    d = _.str.lpad(currTime.getDate().toString(), 2, '0');
+    m = _.str.lpad((currTime.getMonth() + 1).toString(),2, '0');
+    y = _.str.lpad(currTime.getFullYear().toString(), 4, '0');
+    return tplTime({m: m, d: d, y: y});
     
-    
-    return ((m < 10 ? "0" + m : "" + m) + "-" + (d < 10 ? "0" + d : "" + d) + "-" + currTime.getFullYear());
     
 }
+
+function updateFps(delta) {
+    fpsDisplay.innerHTML = tplFps({fps: _.str.numberFormat(1000 / delta, 2)}); 
+}
+    
     
 function animate(time) {
-    lastCount += (time - lastTime);
+    var delta = time - lastTime;
+    lastCount += delta;
     lastTime = time;
     if (running) {
-        if (lastCount > 100) {
+        if (lastCount > 50) {
          timeDisplay.innerHTML = incDay();
+        // fpsDisplay.innerHTML = tplFps({fps: 1000 / delta});
+        updateFps(delta);
          lastCount = 0;
         }
     }
     
     window.requestNextAnimationFrame(animate);
 }    
+
+
 
 startButton.onclick = function(e) {
    running = running ? false : true;

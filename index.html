@@ -9,13 +9,19 @@
         <canvas id="canvas" width="800" height="600">
            Your browser doesn't support HTML5 Canvas.
         </canvas>
-        <div id="main-time">
-          01-12-2012
+        <div id="display-header">
         </div>
+           <div id="main-time">
+             01-12-2012
+           </div>
+           <div id="fps-display"></div>
+        
         <div id="control-bar">
            <input type="button" id="start-button" value="Go" />
            <input type="button" id="reset-button" value="Reset" />
         </div>
+        <script src='app/scripts/vendor/underscore-min.js'></script>
+        <script src='app/scripts/vendor/underscore-string-min.js'></script>
         <script src='app/scripts/lib/requestNextAnimationFrame.js'></script>
         <script src='app/scripts/main.js'></script>
     </body>

@@ -39,6 +39,8 @@ body {
       
 }
 
+
+
 #main-time {
     position: absolute;
     top: 120px;
@@ -55,6 +57,16 @@ body {
     -webkit-border-radius: 5px; 
     color: black;
     text-align: center;
+}
+
+#fps-display {
+    position: absolute;
+    top: 50px;
+    right: 10%;
+    font-size: 1.2em;
+    font-family: san-serif;
+    width: 80px;
+    color: red;
 }
     
     
