@@ -14,12 +14,21 @@ var canvas = document.getElementById('canvas'),
     running = false;
     
     
+function pad(input, length, padding)
+{
+  while((input = input.toString()).length + (padding = padding.toString()).length < length)
+  {
+    padding += padding;
+  }
+  return padding.substr(0, length - input.length) + input;
+}    
+    
 function incDay() {
     var d,m,y;
     currTime = new Date(currTime.getTime() + DAY_MS);
-    d = _.str.lpad(currTime.getDate().toString(), 2, '0');
-    m = _.str.lpad((currTime.getMonth() + 1).toString(),2, '0');
-    y = _.str.lpad(currTime.getFullYear().toString(), 4, '0');
+    d = pad(currTime.getDate(), 2, '0');
+    m = pad((currTime.getMonth() + 1),2, '0');
+    y = pad(currTime.getFullYear(), 4, '0');
     return tplTime({m: m, d: d, y: y});
     
     
@@ -86,58 +95,59 @@ function shadowOff(ctx) {
 }
     
     
-function drawBackground() { // Ruled paper
+function drawBackground(ctx) { // Ruled paper
     var STEP_Y = 12,
     TOP_MARGIN = STEP_Y * 4,
     LEFT_MARGIN = STEP_Y * 3,
-    i = context.canvas.height;
+    i = ctx.canvas.height;
     // Horizontal lines
-    context.strokeStyle = 'lightgray';
-    context.lineWidth = 0.5;
+    ctx.strokeStyle = 'lightgray';
+    ctx.lineWidth = 0.5;
     while(i > TOP_MARGIN) {
-        context.beginPath();
-        context.moveTo(0, i);
-        context.lineTo(context.canvas.width, i);
-        context.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(ctx.canvas.width, i);
+        ctx.stroke();
         i -= STEP_Y;
     }
     // Vertical line
-    context.strokeStyle = 'rgba(100,0,0,0.3)';
-    context.lineWidth = 1;
-    context.beginPath();
-    context.moveTo(LEFT_MARGIN,0);
-    context.lineTo(LEFT_MARGIN,context.canvas.height);
-    context.stroke();
+    ctx.strokeStyle = 'rgba(100,0,0,0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(LEFT_MARGIN,0);
+    ctx.lineTo(LEFT_MARGIN,ctx.canvas.height);
+    ctx.stroke();
 }       
     
     
-function drawTitle(txt) {
-     var TEXT_X = canvas.width/2,
+function drawTitle(ctx,txt) {
+     var TEXT_X = ctx.canvas.width/2,
          TEXT_Y = 45;
-     context.textAlign = 'center';
-     context.textBaseLine = 'middle';
-     context.font = '48px Palantino';
-     shadowOn(context);
-     context.strokeStyle = 'black';
-     context.fillStyle = 'blue';
-     context.fillText (txt, TEXT_X, TEXT_Y);
-     context.strokeText(txt, TEXT_X, TEXT_Y);
-     shadowOff(context);
+     ctx.textAlign = 'center';
+     ctx.textBaseLine = 'middle';
+     ctx.font = '48px Palantino';
+     shadowOn(ctx);
+     ctx.strokeStyle = 'black';
+     ctx.fillStyle = 'blue';
+     ctx.fillText (txt, TEXT_X, TEXT_Y);
+     ctx.strokeText(txt, TEXT_X, TEXT_Y);
+     shadowOff(ctx);
 }
     
     
     
-function draw() {
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    drawBackground();
-    drawTitle(title);
+function draw(ctx) {
+    
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    drawBackground(ctx);
+    drawTitle(ctx, title);
     currTime = new Date(2012, 0, 1);
     timeDisplay.innerHTML = incDay();
 }
 
 OnResizeCalled();
 
-draw();
+draw(context);
 
 window.requestNextAnimationFrame(animate);
 

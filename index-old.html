@@ -5,8 +5,8 @@
         <link rel="stylesheet" href="app/styles/main.css">
     </head>
     <body>
-      <div id="container">
-        <canvas id="main-canvas" width="800" height="600">
+       
+        <canvas id="canvas" width="800" height="600">
            Your browser doesn't support HTML5 Canvas.
         </canvas>
         <div id="display-header">
@@ -15,23 +15,16 @@
              01-12-2012
            </div>
            
-           
-           
            <div id="fps-display"></div>
         
         <div id="control-bar">
            <input type="button" id="start-button" value="Go" />
            <input type="button" id="reset-button" value="Reset" />
         </div>
-      </div>
-      <!--
-      <script data-main="scripts/main" src="scripts/vendor/require-v2.1.0.min.js"></script>
-      -->
-       
+        <script data-main="scripts/main" src="scripts/vendor/require-v2.1.0.min.js"></script>
         <script src='app/scripts/vendor/underscore-v1.4.2.min.js'></script>
         <script src='app/scripts/vendor/underscore-string-v2.3.0.min.js'></script>
-        <script src='app/scripts/vendor/easeljs-0.5.0.min.js'></script>
-         <script src='app/scripts/debtlab-basic.js'></script>
-        <script src='app/scripts/app.js'></script>
+        <script src='app/scripts/lib/requestNextAnimationFrame.js'></script>
+        <script src='app/scripts/main.js'></script>
     </body>
 </html>

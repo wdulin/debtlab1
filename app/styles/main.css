@@ -3,7 +3,7 @@ body {
     background: #efefef;
 }
 
-#canvas {
+#main-canvas {
     background: #ffffff;
     -webkit-box-shadow: 4px 4px 8px rgba(0,0,0,0.5);
     -moz-box-shadow: 4px 4px 8px rgba(0,0,0,0.5);
@@ -57,6 +57,16 @@ body {
     -webkit-border-radius: 5px; 
     color: black;
     text-align: center;
+}
+
+#years-per-minute {
+    position: absolute;
+    top: 120px;
+    left: 400px;
+    width: 80px;
+    font-size: 1.2em;
+    font-family: san-serif;
+ 
 }
 
 #fps-display {
