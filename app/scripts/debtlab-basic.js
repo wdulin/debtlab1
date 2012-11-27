@@ -205,6 +205,7 @@ function DebtLabBasic() {
 DebtLabBasic.prototype.stepSimulation = function () {
     this.currDate = new Date(this.currDate.getTime() + this.DAY_MS);
     this.currentDayNumber += 1;
+    this.currentMoneySupply += 1;
 };
 
 
@@ -281,6 +282,14 @@ DebtLabBasic.prototype.setYearsPerMinute = function(value) {
         this.YearsPerMinute = 2;
     }
 };
+
+DebtLabBasic.prototype.setMoneySupply = function(value) {
+    this.currentMoneySupply = value;
+}
+
+DebtLabBasic.prototype.getMoneySupply = function() {
+    return this.currentMoneySupply;
+}
     
 
 

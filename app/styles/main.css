@@ -69,6 +69,16 @@ body {
  
 }
 
+#edit-money-supply {
+/*    position: absolute;
+    top: 120px;
+    left: 400px;
+    width: 80px; */
+    font-size: 1.2em;
+    font-family: san-serif;
+ 
+}
+
 #fps-display {
     position: absolute;
     top: 50px;
