@@ -181,6 +181,9 @@ SimulatorApp.prototype.initUI = function() {
     this.drawInterestPaid();
     this.drawDebtToLender();
     this.drawBorrowBox();
+    this.drawSpendBox();
+    this.drawTaxBox();
+    this.drawAddToLenderAccount();
    
     
 };
@@ -217,7 +220,7 @@ SimulatorApp.prototype.drawCreatePublicMoney = function() {
      
      
      var auto = document.createElement("input");
-     auto.id = "submitCreatePublicMoneyAmount";
+     auto.id = "submitAutoCreatePublicMoneyAmount";
      auto.type = "button";
      auto.value = "Auto Off";
      auto.style.width = 60 + 'px';
@@ -538,6 +541,7 @@ SimulatorApp.prototype.drawDebtToLender = function() {
 
 SimulatorApp.prototype.drawBorrowBox = function() {
      var g = new createjs.Graphics();
+     var that = this;
      g.setStrokeStyle(1);
      g.beginStroke(createjs.Graphics.getRGB(0,0,0));
      g.beginFill("#62B3F5");
@@ -552,16 +556,424 @@ SimulatorApp.prototype.drawBorrowBox = function() {
      
      var s = new createjs.Shape(g);
      
-     var c = this.boxShowDebtToLender = new createjs.Container();
+     var button1 = document.createElement("input");
+     button1.id = "submitBorrow";
+     button1.type = "button";
+     button1.value = "Borrow";
+     button1.style.width = 160 + 'px';
+     button1.style.height = 40 + 'px';
+     button1.style.position = "absolute";
+     button1.style.fontSize = 14 + "px";
+     button1.style.fontWeight = "bold";
+     button1.style.textAlign = 'center';
+     button1.style.backgroundColor = "#FF0000";
+     this.domRootContainer.htmlElement.appendChild(button1);
+     this.domSubmitBorrow = button1;
+     
+     
+     var auto = document.createElement("input");
+     auto.id = "submitAutoBorrow";
+     auto.type = "button";
+     auto.value = "Auto Off";
+     auto.style.width = 60 + 'px';
+     auto.style.height = 26 + 'px';
+     auto.style.position = "absolute";
+     auto.style.fontSize = 12 + "px";
+     auto.style.textAlign = 'center';
+     auto.style.backgroundColor = "#00FF00";
+     this.domRootContainer.htmlElement.appendChild(auto);
+     this.domSubmitAutoBorrow = auto;
+     
+     
+     
+     
+    var input2 = document.createElement("input");
+    input2.id = "editAutoBorrowAmount";
+    input2.value = "$ 100";
+    input2.style.width = 50 + 'px';
+    input2.style.position = "absolute";
+    input2.style.fontSize = 12 + "px";
+    input2.style.fontWeight = "bold";
+    input2.style.textAlign = 'center';
+    input2.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input2);
+    this.domAutoBorrowAmount = input2;
+     
+     
+    var input = document.createElement("input");
+    input.id = "editAutoBorrowPercent";
+    input.value = "5 %";
+    input.style.width = 34 + 'px';
+    input.style.position = "absolute";
+    input.style.fontSize = 12 + "px";
+    input.style.fontWeight = "bold";
+    input.style.textAlign = 'center';
+    input.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input);
+    this.domAutoBorrowPercent = input; 
+     
+     
+     
+     var c = this.boxBorrow = new createjs.Container();
      c.addChild(s);
      c.x = 385;
      c.y = 272;
      this.stage.addChild(c);
      
      
-     // var pt = this.boxBorrowBox.localToGlobal(60, 60);
-     // this.domShowDebtToLender.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
-     // this.domShowDebtToLender.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
+     var pt = this.boxBorrow.localToGlobal(144, 60);
+     this.domSubmitAutoBorrow.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domSubmitAutoBorrow.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px"; 
+      
+      
+     pt = this.boxBorrow.localToGlobal(36, 10);
+     this.domSubmitBorrow.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domSubmitBorrow.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
+     
+     
+     pt = this.boxBorrow.localToGlobal(30, 60);
+     this.domAutoBorrowAmount.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domAutoBorrowAmount.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
+    
+     pt = this.boxBorrow.localToGlobal(94, 60);
+     this.domAutoBorrowPercent.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domAutoBorrowPercent.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
+     
+     this.stage.update();
+     
+     
+};
+
+SimulatorApp.prototype.drawSpendBox = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill("#F2DEA0");
+     
+     g.moveTo(0,50);
+     g.lineTo(20,0);
+     g.lineTo(210,0);
+     g.lineTo(210,100);
+     g.lineTo(20,100);
+     g.closePath();
+        
+     
+     var s = new createjs.Shape(g);
+     
+         
+     
+     var button1 = document.createElement("input");
+     button1.id = "submitSpend";
+     button1.type = "button";
+     button1.value = "Lender Spends";
+     button1.style.width = 160 + 'px';
+     button1.style.height = 40 + 'px';
+     button1.style.position = "absolute";
+     button1.style.fontSize = 14 + "px";
+     button1.style.fontWeight = "bold";
+     button1.style.textAlign = 'center';
+     button1.style.backgroundColor = "#FF0000";
+     this.domRootContainer.htmlElement.appendChild(button1);
+     this.domSubmitSpend = button1;
+     
+     
+     var auto = document.createElement("input");
+     auto.id = "submitAutoSpend";
+     auto.type = "button";
+     auto.value = "Auto Off";
+     auto.style.width = 60 + 'px';
+     auto.style.height = 26 + 'px';
+     auto.style.position = "absolute";
+     auto.style.fontSize = 12 + "px";
+     auto.style.textAlign = 'center';
+     auto.style.backgroundColor = "#00FF00";
+     this.domRootContainer.htmlElement.appendChild(auto);
+     this.domSubmitAutoSpend = auto;
+     
+     
+     
+     
+    
+     
+     
+    var input = document.createElement("input");
+    input.id = "editAutoSpendPercent";
+    input.value = "5 %";
+    input.style.width = 34 + 'px';
+    input.style.position = "absolute";
+    input.style.fontSize = 12 + "px";
+    input.style.fontWeight = "bold";
+    input.style.textAlign = 'center';
+    input.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input);
+    this.domAutoSpendPercent = input; 
+     
+     
+     
+     var t1 = new createjs.Text("OF LAST" , "bold 12px Arial", "#000");
+     t1.x = 105;
+     t1.y = 50;
+     t1.textAlign = "center";
+     var t2 = new createjs.Text("INTEREST", "bold 12px Arial", "#000");
+     t2.x = 105;
+     t2.y = 64;
+     t2.textAlign = "center";
+     
+     var t3 = new createjs.Text("PAYMENT", "bold 12px Arial", "#000");
+     t3.x = 105;
+     t3.y = 78;
+     t3.textAlign = "center";
+     
+     var c = this.boxSpend = new createjs.Container();
+     c.addChild(s);
+     c.addChild(t1);
+     c.addChild(t2);
+     c.addChild(t3);
+     c.x = 385;
+     c.y = 376;
+     this.stage.addChild(c);
+     
+     
+     var pt = this.boxSpend.localToGlobal(144, 60);
+     this.domSubmitAutoSpend.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domSubmitAutoSpend.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px"; 
+      
+      
+     pt = this.boxSpend.localToGlobal(36, 10);
+     this.domSubmitSpend.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domSubmitSpend.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
+     
+     
+    
+    
+     pt = this.boxSpend.localToGlobal(32, 60);
+     this.domAutoSpendPercent.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domAutoSpendPercent.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
+     
+     this.stage.update();
+     
+     
+};
+
+SimulatorApp.prototype.drawTaxBox = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill("#D9E835");
+     
+     g.moveTo(0,50);
+     g.lineTo(20,0);
+     g.lineTo(210,0);
+     g.lineTo(210,100);
+     g.lineTo(20,100);
+     g.closePath();
+        
+     
+     var s = new createjs.Shape(g);
+     
+         
+     
+     var button1 = document.createElement("input");
+     button1.id = "submitTax";
+     button1.type = "button";
+     button1.value = "Tax Lender";
+     button1.style.width = 160 + 'px';
+     button1.style.height = 40 + 'px';
+     button1.style.position = "absolute";
+     button1.style.fontSize = 14 + "px";
+     button1.style.fontWeight = "bold";
+     button1.style.textAlign = 'center';
+     button1.style.backgroundColor = "#FF0000";
+     this.domRootContainer.htmlElement.appendChild(button1);
+     this.domSubmitTax = button1;
+     
+     
+     var auto = document.createElement("input");
+     auto.id = "submitAutoTax";
+     auto.type = "button";
+     auto.value = "Auto Off";
+     auto.style.width = 60 + 'px';
+     auto.style.height = 26 + 'px';
+     auto.style.position = "absolute";
+     auto.style.fontSize = 12 + "px";
+     auto.style.textAlign = 'center';
+     auto.style.backgroundColor = "#00FF00";
+     this.domRootContainer.htmlElement.appendChild(auto);
+     this.domSubmitAutoTax = auto;
+     
+     
+     
+     
+    
+     
+     
+    var input = document.createElement("input");
+    input.id = "editAutoTaxPercent";
+    input.value = "5 %";
+    input.style.width = 34 + 'px';
+    input.style.position = "absolute";
+    input.style.fontSize = 12 + "px";
+    input.style.fontWeight = "bold";
+    input.style.textAlign = 'center';
+    input.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input);
+    this.domAutoTaxPercent = input; 
+     
+     
+     
+     var t1 = new createjs.Text("OF LAST" , "bold 12px Arial", "#000");
+     t1.x = 105;
+     t1.y = 50;
+     t1.textAlign = "center";
+     var t2 = new createjs.Text("INTEREST", "bold 12px Arial", "#000");
+     t2.x = 105;
+     t2.y = 64;
+     t2.textAlign = "center";
+     
+     var t3 = new createjs.Text("PAYMENT", "bold 12px Arial", "#000");
+     t3.x = 105;
+     t3.y = 78;
+     t3.textAlign = "center";
+     
+     var c = this.boxTax = new createjs.Container();
+     c.addChild(s);
+     c.addChild(t1);
+     c.addChild(t2);
+     c.addChild(t3);
+     c.x = 385;
+     c.y = 480;
+     this.stage.addChild(c);
+     
+     
+     var pt = this.boxTax.localToGlobal(144, 60);
+     this.domSubmitAutoTax.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domSubmitAutoTax.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px"; 
+      
+      
+     pt = this.boxTax.localToGlobal(36, 10);
+     this.domSubmitTax.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domSubmitTax.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
+     
+     
+    
+    
+     pt = this.boxTax.localToGlobal(32, 60);
+     this.domAutoTaxPercent.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domAutoTaxPercent.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
+     
+     this.stage.update();
+     
+     
+};
+
+
+
+SimulatorApp.prototype.drawAddToLenderAccount = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill("#D1A930");
+     g.drawRoundRect(0, 0, 220, 90, 5);
+     var s = new createjs.Shape(g);
+     
+     
+     
+     var button1 = document.createElement("input");
+     button1.id = "submitCreatePublicMoneyAmount";
+     button1.type = "button";
+     button1.value = "Add To Lender Account";
+     button1.style.width = 180 + 'px';
+     button1.style.height = 36 + 'px';
+     button1.style.position = "absolute";
+     button1.style.fontSize = 14 + "px";
+     button1.style.fontWeight = "bold";
+     button1.style.textAlign = 'center';
+     button1.style.backgroundColor = "#FF0000";
+     this.domRootContainer.htmlElement.appendChild(button1);
+     this.domSubmitAddMoneyToLenderAccount = button1;
+     
+     
+     var auto = document.createElement("input");
+     auto.id = "submitAutoAddMoneyToLenderAccount";
+     auto.type = "button";
+     auto.value = "Auto Off";
+     auto.style.width = 60 + 'px';
+     auto.style.height = 26 + 'px';
+     auto.style.position = "absolute";
+     auto.style.fontSize = 12 + "px";
+     auto.style.textAlign = 'center';
+     auto.style.backgroundColor = "#00FF00";
+     this.domRootContainer.htmlElement.appendChild(auto);
+     this.domAutoAddMoneyToLenderAccount = auto;
+     
+     
+     
+     
+    var input = document.createElement("input");
+    input.id = "editAddMoneyToLenderAccountAmount";
+    input.value = "$ 100";
+    input.style.width = 80 + 'px';
+    input.style.position = "absolute";
+    input.style.fontSize = 16 + "px";
+    input.style.fontWeight = "bold";
+    input.style.textAlign = 'center';
+    input.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input);
+    this.domAddMoneyToLenderAccountAmount = input;
+    
+     
+          
+     var c = this.boxAddMoneyToLenderAccount = new createjs.Container();
+     c.addChild(s);
+    // c.addChild(t);
+         
+     
+     c.x = 715;
+     c.y = 210;
+     this.stage.addChild(c);
+     
+      
+     var pt = this.boxAddMoneyToLenderAccount.localToGlobal(130, 52);
+     this.domAutoAddMoneyToLenderAccount.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domAutoAddMoneyToLenderAccount.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px"; 
+      
+      
+     pt = this.boxAddMoneyToLenderAccount.localToGlobal(22, 6);
+     this.domSubmitAddMoneyToLenderAccount.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domSubmitAddMoneyToLenderAccount.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
+     
+     
+     pt = this.boxAddMoneyToLenderAccount.localToGlobal(26, 50);
+     this.domAddMoneyToLenderAccountAmount.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domAddMoneyToLenderAccountAmount.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
     
      
      
@@ -569,6 +981,8 @@ SimulatorApp.prototype.drawBorrowBox = function() {
      
      
 }
+
+
 
 
 SimulatorApp.prototype.updateParameters = function() {
