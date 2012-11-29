@@ -14,7 +14,12 @@ function DebtLabBasic() {
      * Starting value for target money supply
 	 */
     this.DEFAULT_BEGINNING_TARGET_MONEY_SUPPLY = 10000;
-
+    
+    /**
+	 * If true then money is borrowed as necessary
+	 */
+    this.DEFAULT_AUTO_BORROW = false;
+    
 	/**
 	 * If true then lender account is added to as necessary 
 	 */
@@ -93,7 +98,7 @@ function DebtLabBasic() {
     this. DAY_MS = 60 * 60 * 1000 * 24;
     
     
-        /**
+     /**
 	 * Feature 17: While activated erases loans erases loans that come due without
 	 * paying back to lender account or debit from money supply.
 	 */
@@ -102,6 +107,14 @@ function DebtLabBasic() {
 	 * if true lender account is automatically added to as necessary
 	 */
 	this.autoAddToLenderAccountFlag;
+    
+    
+    /**
+     * if true money is automatically borrowed as needed
+	 */
+	this.autoBorrowFlag = false;
+    
+    
 	/**
 	 * if true public money is created as needed
 	 */
@@ -137,7 +150,7 @@ function DebtLabBasic() {
 	/**
 	 * rate of time passage as days per minute
 	 */
-    this.YearsPerMinute = 2;
+    this.yearsPerMinute = 2;
 	/**
 	 * Amount to add to lender account when doAddToLenderAccount
 	 */
@@ -226,12 +239,16 @@ DebtLabBasic.prototype.doResetToDefaults = function () {
 	this.autoTargetMoneySupplyGrowFlag = this.DEFAULT_AUTO_TARGET_MONEY_SUPPLY_GROW;
 	
 	this.autoTaxLenderFlag = this.DEFAULT_AUTO_TAX_LENDER;
+    
+    this.autoBorrowFlag = this.DEFAULT_AUTO_BORROW;
+
+
 
 	this.createPublicMoneyAmount  = this.DEFAULT_CREATE_PUBLIC_MONEY_AMOUNT;
 
 	this.currentMoneySupply =  this.DEFAULT_STARTING_MONEY_SUPPLY;
 	
-    this.daysPerMinute = this.DEFAULT_DAYS_PER_MINUTE;
+    this.yearsPerMinute = this.DEFAULT_YEARS_PER_MINUTE;
 
 	this.lenderAccountAddAmount = this.DEFAULT_ADD_TO_LENDER_ACCOUNT_AMOUNT;
 
@@ -272,25 +289,83 @@ DebtLabBasic.prototype.getDayNumber = function() {
 };
 
 DebtLabBasic.prototype.getYearsPerMinute = function() {
-    return this.YearsPerMinute;
+   
+    return this.yearsPerMinute;
 };
 
 DebtLabBasic.prototype.setYearsPerMinute = function(value) {
-    if(value < 20 && value > 0) {
-        this.YearsPerMinute = value;
+    console.log(value);
+    if(value < 50 && value > 0) {
+        this.yearsPerMinute = value;
     } else {
-        this.YearsPerMinute = 2;
+        this.yearsPerMinute = 2;
     }
 };
 
 DebtLabBasic.prototype.setMoneySupply = function(value) {
     this.currentMoneySupply = value;
-}
+};
 
 DebtLabBasic.prototype.getMoneySupply = function() {
     return this.currentMoneySupply;
-}
-    
+};
+
+DebtLabBasic.prototype.setAutoTargetMoneySupplyGrow = function(value) {
+    this. autoTargetMoneySupplyGrowFlag = value;
+};
+
+DebtLabBasic.prototype.getAutoTargetMoneySupplyGrow = function() {
+    return this.autoTargetMoneySupplyGrowFlag;
+};
+
+DebtLabBasic.prototype.setAutoCreatePublicMoneyFlag = function(value) {
+    this.autoCreatePublicMoneyFlag = value;
+};
+
+DebtLabBasic.prototype.getAutoCreatePublicMoneyFlag = function() {
+    return this.autoCreatePublicMoneyFlag;
+};
+
+
+DebtLabBasic.prototype.setAutoBorrowFlag = function(value) {
+    this.autoBorrowFlag = value;
+};
+
+DebtLabBasic.prototype.getAutoBorrowFlag = function() {
+    return this.autoBorrowFlag;
+};
+
+DebtLabBasic.prototype.setAutoLenderSpendFlag = function(value) {
+    this.autoLenderSpendFlag = value;
+};
+
+DebtLabBasic.prototype.getAutoLenderSpendFlag = function() {
+    return this.autoLenderSpendFlag;
+};
+
+DebtLabBasic.prototype.setAutoTaxLenderFlag = function(value) {
+    this.autoTaxLenderFlag = value;
+};
+
+DebtLabBasic.prototype.getAutoTaxLenderFlag = function() {
+    return this.autoTaxLenderFlag;
+};
+
+DebtLabBasic.prototype.setAutoAddToLenderAccountFlag = function(value) {
+    this.autoAddToLenderAccountFlag = value;
+};
+
+DebtLabBasic.prototype.getAutoAddToLenderAccountFlag = function() {
+    return this.autoAddToLenderAccountFlag;
+};
+
+DebtLabBasic.prototype.setAutoLendFromLenderDepositsFlag = function(value) {
+    this.autoLendFromLenderDepositsFlag = value;
+};
+
+DebtLabBasic.prototype.getAutoLendFromLenderDepositsFlag = function() {
+    return this.autoLendFromLenderDepositsFlag;
+};
 
 
 

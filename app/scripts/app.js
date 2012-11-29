@@ -1,4 +1,30 @@
-
+/**
+ * TODO: UI
+ *   1) Sprite sheets for up and down errors.
+ *   2) Trend Indicators working
+ *   3) Sprite sheet for payback indicator
+ *   4) Payback indicator
+ *  
+ *   
+ *   
+ *   9) updateParameters
+ *  10) updateUI
+ *  11)
+ *  12) Button click events
+ * 
+ * DONE:
+ *   5) Deposited with Lender Box
+ *   6) Years per Minute controls 
+ *   7) Auto buttons working
+ *   8) Enter key restarts simulator
+ *  
+ * 
+ * TODO: Simulation
+ *   1)
+ * 
+ * 
+ * 
+ */
 
 
 
@@ -35,6 +61,7 @@ function SimulatorApp() {
      */
      this.running = false;
      this.RESIZABLE = false;
+     this.DEBUG = false;
      
     /**
      * Date display
@@ -45,6 +72,12 @@ function SimulatorApp() {
     this.lastCount = 0;
     this.tplTime = _.template("<%= m %>-<%= d %>-<%= y %>");
     this.tplFps = _.template("fps:<%= fps %>");
+    this.interval = 50;
+    
+    // TODO: this will be used for running simulation in larger chunks of days 
+    // to avoid very small time slices
+    this.multiplier = 1;  
+                          
   
     
     
@@ -72,8 +105,9 @@ SimulatorApp.prototype.tick = function (timeElapsed) {
     this.lastCount += timeElapsed;
    // this.lastTime = timeElapsed;
     // console.log(timeElapsed);
+    
     if (this.running) {
-        if (this.lastCount > 50) {
+        if (this.lastCount > this.interval) {
            this.debtLab.stepSimulation();
            this.updateUI();
            this.lastCount = 0;
@@ -84,20 +118,7 @@ SimulatorApp.prototype.tick = function (timeElapsed) {
  
 };
 
-SimulatorApp.prototype.updateUI = function () {
-    
-    var d,m,y;
-    var currTime = this.debtLab.getDate();
-    d = this.pad(currTime.getDate(), 2, '0');
-    m = this.pad((currTime.getMonth() + 1),2, '0');
-    y = this.pad(currTime.getFullYear(), 4, '0');
-    this.domDisplayMainTime.innerHTML = this.tplTime({m: m, d: d, y: y});
-    
-    this.domDisplayFps.innerHTML = this.tplFps({fps:createjs.Ticker.getFPS()});
-    if(this.domInputMoneySupply) {
-         this.domInputMoneySupply.value = this.debtLab.getMoneySupply();
-    }
-};
+
 
 
 SimulatorApp.prototype.init = function () {
@@ -106,6 +127,7 @@ SimulatorApp.prototype.init = function () {
     this.debtLab.initClock(new Date(2012, 0, 1));
     this.updateUI();
     createjs.Ticker.useRAF = true;
+    createjs.Ticker.setFPS(60);
     createjs.Ticker.addListener(this);
 };
 
@@ -114,7 +136,15 @@ SimulatorApp.prototype.pauseSimulator = function (that) {
         that.domButtonStart.value = 'Go';
         that.running = false;
     }
-}
+};
+
+SimulatorApp.prototype.startSimulator = function (that) {
+    if (that.running === false) {
+        that.updateParameters();
+        that.domButtonStart.value = 'Pause';
+        that.running = true;
+    }
+};
 
 
 /**
@@ -141,8 +171,14 @@ SimulatorApp.prototype.initUI = function() {
        that.updateUI();
     };
     
+    this.interval = (60000 / (365 * this.debtLab.getYearsPerMinute()));
+    
     this.domDisplayMainTime = document.getElementById('main-time');
+    
     this.domDisplayFps = document.getElementById('fps-display');
+    if (this.DEBUG) {
+        this.domDisplayFps.style.visibity = "hidden";
+    }
     this.mainCanvas = document.getElementById('main-canvas');
     
     
@@ -161,6 +197,19 @@ SimulatorApp.prototype.initUI = function() {
     };
     window.addEventListener("resize", resizeFunction, false);
     resizeFunction();   
+    
+    // Setup Arrows
+
+    this.upMoneySupply = new createjs.BitmapAnimation(
+        new createjs.SpriteSheet({
+            "animations": {"disabled": [0], "greenup": [1,6], "yellowup": [7,12], "redup": [13, 18]}, 
+            "images": ["app/img/up-sprite-small.png"],
+            "frames": {"regX": 0, "height": 52, "count": 19, "regY": 0, "width": 32}
+        })
+    );
+    
+    this.stage.addChild(this.upMoneySupply);
+    this.upMoneySupply.gotoAndStop("disabled");
         
     this.mainContext.clearRect(0, 0, this.mainContext.canvas.width, this.mainContext.canvas.height);
     
@@ -184,6 +233,10 @@ SimulatorApp.prototype.initUI = function() {
     this.drawSpendBox();
     this.drawTaxBox();
     this.drawAddToLenderAccount();
+    this.drawLenderAccount();
+    this.drawPaybackBox();
+    this.drawLenderDeposits();
+    this.drawYearsPerMinute();
    
     
 };
@@ -220,7 +273,7 @@ SimulatorApp.prototype.drawCreatePublicMoney = function() {
      
      
      var auto = document.createElement("input");
-     auto.id = "submitAutoCreatePublicMoneyAmount";
+     auto.id = "submitAutoCreatePublicMoney";
      auto.type = "button";
      auto.value = "Auto Off";
      auto.style.width = 60 + 'px';
@@ -228,9 +281,14 @@ SimulatorApp.prototype.drawCreatePublicMoney = function() {
      auto.style.position = "absolute";
      auto.style.fontSize = 12 + "px";
      auto.style.textAlign = 'center';
-     auto.style.backgroundColor = "#00FF00";
+     auto.style.backgroundColor = "#EEEEEE";
+     auto.onclick = function(e) {
+         that.debtLab.setAutoCreatePublicMoneyFlag(!that.debtLab.getAutoCreatePublicMoneyFlag());
+         that.updateUI();
+     };
      this.domRootContainer.htmlElement.appendChild(auto);
-     this.domAutoCreatePublicMoneyAmount = auto;
+     this.domAutoCreatePublicMoney = auto;
+     
      
      
      
@@ -246,6 +304,19 @@ SimulatorApp.prototype.drawCreatePublicMoney = function() {
     input.onclick = function(e) {
         if(that.running) {
           that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     //IE
+         else
+              key = e.which;     //firefox
+        if (key == 13) {
+            console.log("Return");
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
         }
     };
     
@@ -265,8 +336,8 @@ SimulatorApp.prototype.drawCreatePublicMoney = function() {
      
       
      var pt = this.boxCreatePublicMoney.localToGlobal(120, 52);
-     this.domAutoCreatePublicMoneyAmount.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
-     this.domAutoCreatePublicMoneyAmount.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px"; 
+     this.domAutoCreatePublicMoney.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domAutoCreatePublicMoney.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px"; 
       
       
      pt = this.boxCreatePublicMoney.localToGlobal(22, 6);
@@ -319,6 +390,19 @@ SimulatorApp.prototype.drawMoneySupplyTarget = function() {
           that.pauseSimulator(that);
         }
     };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     //IE
+         else
+              key = e.which;     //firefox
+        if (key == 13) {
+            console.log("Return");
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
+        }
+    };
     
     this.domRootContainer.htmlElement.appendChild(input);
     this.domInputMoneySupplyTarget = input;
@@ -326,7 +410,7 @@ SimulatorApp.prototype.drawMoneySupplyTarget = function() {
      
      
     var auto = document.createElement("input");
-     auto.id = "submitCreatePublicMoneyAmount";
+     auto.id = "submitAutoGrowTargetMoneySupply";
      auto.type = "button";
      auto.value = "Auto Off";
      auto.style.width = 60 + 'px';
@@ -334,9 +418,17 @@ SimulatorApp.prototype.drawMoneySupplyTarget = function() {
      auto.style.position = "absolute";
      auto.style.fontSize = 12 + "px";
      auto.style.textAlign = 'center';
-     auto.style.backgroundColor = "#00FF00";
+     auto.style.backgroundColor = "#EEEEEE";
+     auto.onclick = function(e) {
+         that.debtLab.setAutoTargetMoneySupplyGrow(!that.debtLab.getAutoTargetMoneySupplyGrow());
+         that.updateUI();
+     };
      this.domRootContainer.htmlElement.appendChild(auto);
      this.domAutoGrowTargetMoneySupply = auto;
+     
+     
+     
+     
      
      
      
@@ -352,6 +444,20 @@ SimulatorApp.prototype.drawMoneySupplyTarget = function() {
     input2.onclick = function(e) {
         if(that.running) {
           that.pauseSimulator(that);
+        }
+    };
+    
+    input2.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     //IE
+         else
+              key = e.which;     //firefox
+        if (key == 13) {
+            console.log("Return");
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
         }
     };
     
@@ -421,6 +527,19 @@ SimulatorApp.prototype.drawMoneySupply = function() {
           that.pauseSimulator(that);
         }
     };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     //IE
+         else
+              key = e.which;     //firefox
+        if (key == 13) {
+            console.log("Return");
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
+        }
+    };
     
     this.domRootContainer.htmlElement.appendChild(input);
     this.domInputMoneySupply = input;
@@ -428,9 +547,16 @@ SimulatorApp.prototype.drawMoneySupply = function() {
      
           
      var c = this.boxMoneySupply = new createjs.Container();
+     
+     this.upMoneySupply.x = 20;
+     this.upMoneySupply.y = 40;
+     
+     
      c.addChild(s);
      c.addChild(t);
-         
+     c.addChild(this.upMoneySupply);
+     this.upMoneySupply.gotoAndStop("disabled");
+     
      
      c.x = 55;
      c.y = 342;
@@ -537,7 +663,67 @@ SimulatorApp.prototype.drawDebtToLender = function() {
      this.stage.update();
      
      
-}
+};
+
+
+SimulatorApp.prototype.drawPaybackBox = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill("#5E555D");
+     
+     
+     g.moveTo(0,0);
+     g.lineTo(190, 0);
+     g.lineTo(210, 50);
+     g.lineTo(190, 100);
+     g.lineTo(0, 100);
+     g.closePath();
+        
+     
+     var s = new createjs.Shape(g);
+     
+         
+     
+     var button1 = document.createElement("input");
+     button1.id = "submitDefault";
+     button1.type = "button";
+     button1.value = "Default On Payback";
+     button1.style.width = 160 + 'px';
+     button1.style.height = 40 + 'px';
+     button1.style.position = "absolute";
+     button1.style.fontSize = 14 + "px";
+     button1.style.fontWeight = "bold";
+     button1.style.textAlign = 'center';
+     button1.style.backgroundColor = "#FF0000";
+     this.domRootContainer.htmlElement.appendChild(button1);
+     this.domSubmitDefault = button1;
+     
+     
+    
+     
+     var c = this.boxPayback = new createjs.Container();
+     c.addChild(s);
+    
+     c.x = 405;
+     c.y = 168;
+     this.stage.addChild(c);
+     
+     
+      
+     pt = this.boxPayback.localToGlobal(18, 8);
+     this.domSubmitDefault.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domSubmitDefault.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
+     
+     
+     this.stage.update();
+     
+     
+};
+
+
+
 
 SimulatorApp.prototype.drawBorrowBox = function() {
      var g = new createjs.Graphics();
@@ -581,10 +767,18 @@ SimulatorApp.prototype.drawBorrowBox = function() {
      auto.style.fontSize = 12 + "px";
      auto.style.textAlign = 'center';
      auto.style.backgroundColor = "#00FF00";
+     auto.onclick = function(e) {
+         that.debtLab.setAutoBorrowFlag(!that.debtLab.getAutoBorrowFlag());
+         that.updateUI();
+     };
+    
+        
      this.domRootContainer.htmlElement.appendChild(auto);
      this.domSubmitAutoBorrow = auto;
      
      
+   
+   
      
      
     var input2 = document.createElement("input");
@@ -598,6 +792,19 @@ SimulatorApp.prototype.drawBorrowBox = function() {
     input2.onclick = function(e) {
         if(that.running) {
           that.pauseSimulator(that);
+        }
+    };
+    input2.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     //IE
+         else
+              key = e.which;     //firefox
+        if (key == 13) {
+            console.log("Return");
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
         }
     };
     
@@ -616,6 +823,19 @@ SimulatorApp.prototype.drawBorrowBox = function() {
     input.onclick = function(e) {
         if(that.running) {
           that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     //IE
+         else
+              key = e.which;     //firefox
+        if (key == 13) {
+            console.log("Return");
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
         }
     };
     
@@ -697,7 +917,15 @@ SimulatorApp.prototype.drawSpendBox = function() {
      auto.style.position = "absolute";
      auto.style.fontSize = 12 + "px";
      auto.style.textAlign = 'center';
-     auto.style.backgroundColor = "#00FF00";
+     auto.style.backgroundColor = "#EEEEEE";
+     auto.onclick = function(e) {
+         that.debtLab.setAutoLenderSpendFlag(!that.debtLab.getAutoLenderSpendFlag());
+         that.updateUI();
+     };
+    
+ 
+     
+     
      this.domRootContainer.htmlElement.appendChild(auto);
      this.domSubmitAutoSpend = auto;
      
@@ -718,6 +946,19 @@ SimulatorApp.prototype.drawSpendBox = function() {
     input.onclick = function(e) {
         if(that.running) {
           that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     //IE
+         else
+              key = e.which;     //firefox
+        if (key == 13) {
+            console.log("Return");
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
         }
     };
     
@@ -814,7 +1055,17 @@ SimulatorApp.prototype.drawTaxBox = function() {
      auto.style.position = "absolute";
      auto.style.fontSize = 12 + "px";
      auto.style.textAlign = 'center';
-     auto.style.backgroundColor = "#00FF00";
+     auto.style.backgroundColor = "#EEEEEE";
+     auto.onclick = function(e) {
+         that.debtLab.setAutoTaxLenderFlag(!that.debtLab.getAutoTaxLenderFlag());
+         that.updateUI();
+     };
+    
+     
+    
+    
+     
+     
      this.domRootContainer.htmlElement.appendChild(auto);
      this.domSubmitAutoTax = auto;
      
@@ -835,6 +1086,19 @@ SimulatorApp.prototype.drawTaxBox = function() {
     input.onclick = function(e) {
         if(that.running) {
           that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     //IE
+         else
+              key = e.which;     //firefox
+        if (key == 13) {
+            console.log("Return");
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
         }
     };
     
@@ -889,6 +1153,71 @@ SimulatorApp.prototype.drawTaxBox = function() {
 };
 
 
+SimulatorApp.prototype.drawYearsPerMinute = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill("#D5F09E");
+     g.drawRoundRect(0, 0, 200, 90, 5);
+     var s = new createjs.Shape(g);
+     var t = new createjs.Text("Years Per Minute", "bold 16px Arial", "#FFF");
+     t.x = 100;
+     t.y = 10;
+     t.textAlign = "center";
+     
+    var input = document.createElement("input");
+    input.id = "editYearsPerMinute";
+    input.value = "2";
+    input.style.width = 60 + 'px';
+    input.style.position = "absolute";
+    input.style.fontSize = 16 + "px";
+    input.style.fontWeight = "bold";
+    input.style.textAlign = 'center';
+    input.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     //IE
+         else
+              key = e.which;     //firefox
+        if (key == 13) {
+            console.log("Return");
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input);
+    this.domInputYearsPerMinute = input;
+    
+     
+          
+     var c = this.boxLenderAccount = new createjs.Container();
+     c.addChild(s);
+     c.addChild(t);
+         
+     
+     c.x = 715;
+     c.y = 90;
+     this.stage.addChild(c);
+     var pt = this.boxLenderAccount.localToGlobal(66, 40);
+     this.domInputYearsPerMinute.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domInputYearsPerMinute.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
+    
+     
+     
+     this.stage.update();
+     
+     
+}
+
+
 
 SimulatorApp.prototype.drawAddToLenderAccount = function() {
      var g = new createjs.Graphics();
@@ -925,7 +1254,13 @@ SimulatorApp.prototype.drawAddToLenderAccount = function() {
      auto.style.position = "absolute";
      auto.style.fontSize = 12 + "px";
      auto.style.textAlign = 'center';
-     auto.style.backgroundColor = "#00FF00";
+     auto.style.backgroundColor = "#EEEEEE";
+     auto.onclick = function(e) {
+         that.debtLab.setAutoAddToLenderAccountFlag(!that.debtLab.getAutoAddToLenderAccountFlag());
+         that.updateUI();
+     };
+     
+    
      this.domRootContainer.htmlElement.appendChild(auto);
      this.domAutoAddMoneyToLenderAccount = auto;
      
@@ -943,6 +1278,19 @@ SimulatorApp.prototype.drawAddToLenderAccount = function() {
     input.onclick = function(e) {
         if(that.running) {
           that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     //IE
+         else
+              key = e.which;     //firefox
+        if (key == 13) {
+            console.log("Return");
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
         }
     };
     
@@ -982,15 +1330,200 @@ SimulatorApp.prototype.drawAddToLenderAccount = function() {
      
 }
 
-
-
-
-SimulatorApp.prototype.updateParameters = function() {
-    var moneySupply = parseInt(this.domInputMoneySupply.value);
-    if(moneySupply > 100 && moneySupply < 1000000) {
-       this.debtLab.setMoneySupply(moneySupply);
-    }
+SimulatorApp.prototype.drawLenderAccount = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill("#0000FF");
+     g.drawRoundRect(0, 0, 240, 120, 5);
+     var s = new createjs.Shape(g);
+     var t = new createjs.Text("LENDER'S ACCOUNT", "bold 16px Arial", "#FFF");
+     t.x = 116;
+     t.y = 25;
+     t.textAlign = "center";
+     
+    var input = document.createElement("input");
+    input.id = "editLenderAccount";
+    input.value = "$ 1,000";
+    input.style.width = 110 + 'px';
+    input.style.position = "absolute";
+    input.style.fontSize = 16 + "px";
+    input.style.fontWeight = "bold";
+    input.style.textAlign = 'center';
+    input.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     //IE
+         else
+              key = e.which;     //firefox
+        if (key == 13) {
+            console.log("Return");
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input);
+    this.domInputLenderAccount = input;
+    
+     
+          
+     var c = this.boxLenderAccount = new createjs.Container();
+     c.addChild(s);
+     c.addChild(t);
+         
+     
+     c.x = 715;
+     c.y = 332;
+     this.stage.addChild(c);
+     var pt = this.boxLenderAccount.localToGlobal(60, 60);
+     this.domInputLenderAccount.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domInputLenderAccount.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
+    
+     
+     
+     this.stage.update();
+     
+     
 }
+
+SimulatorApp.prototype.drawLenderDeposits = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill("#E8B407");
+     g.drawRoundRect(0, 0, 200, 120, 5);
+     var s = new createjs.Shape(g);
+     
+     
+     
+     
+     var button1 = document.createElement("input");
+     button1.id = "submitLendFromDeposits";
+     button1.type = "button";
+     button1.value = "Lend From Deposits";
+     button1.style.width = 160 + 'px';
+     button1.style.height = 36 + 'px';
+     button1.style.position = "absolute";
+     button1.style.fontSize = 14 + "px";
+     button1.style.fontWeight = "bold";
+     button1.style.textAlign = 'center';
+     button1.style.backgroundColor = "#FF0000";
+     this.domRootContainer.htmlElement.appendChild(button1);
+     this.domSubmitLendFromDeposits = button1;
+     
+     
+     var auto = document.createElement("input");
+     auto.id = "submitAutoLendFromDeposits";
+     auto.type = "button";
+     auto.value = "Auto Off";
+     auto.style.width = 60 + 'px';
+     auto.style.height = 26 + 'px';
+     auto.style.position = "absolute";
+     auto.style.fontSize = 12 + "px";
+     auto.style.textAlign = 'center';
+     auto.style.backgroundColor = "#EEEEEE";
+     auto.onclick = function(e) {
+         that.debtLab.setAutoLendFromLenderDepositsFlag(!that.debtLab.getAutoLendFromLenderDepositsFlag());
+         that.updateUI();
+     };
+     
+     
+     
+     
+     this.domRootContainer.htmlElement.appendChild(auto);
+     this.domAutoLendFromDeposits = auto;
+     
+     
+     
+     
+    var input = document.createElement("input");
+    input.id = "editLendFromDepositsBalance";
+    input.value = "$ 10,000";
+    input.style.width = 80 + 'px';
+    input.style.position = "absolute";
+    input.style.fontSize = 16 + "px";
+    input.style.fontWeight = "bold";
+    input.style.textAlign = 'center';
+    input.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     //IE
+         else
+              key = e.which;     //firefox
+        if (key == 13) {
+            console.log("Return");
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input);
+    this.domLendFromDepositsBalance = input;
+    
+     
+          
+     var c = this.boxLenderDeposits = new createjs.Container();
+     c.addChild(s);
+    
+         
+     
+     var t = new createjs.Text("Deposited", "bold 16px Arial", "#000");
+     t.x = 100;
+     t.y = 42;
+     t.textAlign = "center";
+     var t2 = new createjs.Text("With Lender", "bold 16px Arial", "#000");
+     t2.x = 100;
+     t2.y = 60;
+     t2.textAlign = "center";
+     c.addChild(t);
+     c.addChild(t2);
+     
+     
+     c.x = 715;
+     c.y = 472;
+     this.stage.addChild(c);
+     
+      
+     var pt = this.boxLenderDeposits.localToGlobal(126, 82);
+     this.domAutoLendFromDeposits.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domAutoLendFromDeposits.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px"; 
+      
+      
+     pt = this.boxLenderDeposits.localToGlobal(22, 6);
+     this.domSubmitLendFromDeposits.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domSubmitLendFromDeposits.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
+     
+     
+     pt = this.boxLenderDeposits.localToGlobal(36, 80);
+     this.domLendFromDepositsBalance.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domLendFromDepositsBalance.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
+    
+     
+     
+     this.stage.update();
+     
+     
+}
+
+
+
+
+
 
 
 SimulatorApp.prototype.positionDOM = function (that) {
@@ -1050,7 +1583,68 @@ SimulatorApp.prototype.drawRuledBackground = function () {
 
 
 
+SimulatorApp.prototype.updateUI = function () {
+    
+    var d,m,y;
+    var currTime = this.debtLab.getDate();
+    d = this.pad(currTime.getDate(), 2, '0');
+    m = this.pad((currTime.getMonth() + 1),2, '0');
+    y = this.pad(currTime.getFullYear(), 4, '0');
+    this.domDisplayMainTime.innerHTML = this.tplTime({m: m, d: d, y: y});
+    
+    if (this.DEBUG) {
+       this.domDisplayFps.innerHTML = this.tplFps({fps:createjs.Ticker.getFPS()});
+    }
+    if(this.domInputMoneySupply) {
+         this.domInputMoneySupply.value = this.debtLab.getMoneySupply();
+    }
+    
+    if (this.domInputYearsPerMinute) {
+        this.domInputYearsPerMinute.value = this.debtLab.getYearsPerMinute();
+        
+    }
+    
+    this.setAutoButton(this.debtLab.getAutoTargetMoneySupplyGrow(), this.domAutoGrowTargetMoneySupply);
+    this.setAutoButton(this.debtLab.getAutoCreatePublicMoneyFlag(), this.domAutoCreatePublicMoney);
+    this.setAutoButton(this.debtLab.getAutoBorrowFlag(), this.domSubmitAutoBorrow);
+    this.setAutoButton(this.debtLab.getAutoLenderSpendFlag(), this.domSubmitAutoSpend);
+    this.setAutoButton(this.debtLab.getAutoTaxLenderFlag(), this.domSubmitAutoTax);
+    this.setAutoButton(this.debtLab.getAutoAddToLenderAccountFlag(), this.domAutoAddMoneyToLenderAccount);
+    this.setAutoButton(this.debtLab.getAutoLendFromLenderDepositsFlag(), this.domAutoLendFromDeposits);
+    
+    
 
+
+     
+    
+};
+
+SimulatorApp.prototype.setAutoButton = function(flag, button) {
+    if (flag) {
+       button.value = "Auto On";
+       button.style.backgroundColor = "#00FF00";
+    } else {
+       button.value = "Auto Off";
+       button.style.backgroundColor = "#EEEEEE";
+    }
+};
+
+
+SimulatorApp.prototype.updateParameters = function() {
+    var moneySupply = parseInt(this.domInputMoneySupply.value, 10);
+    if(moneySupply > 100 && moneySupply < 1000000) {
+       this.debtLab.setMoneySupply(moneySupply);
+    }
+    
+    var yearsPerMinute = parseInt(this.domInputYearsPerMinute.value, 10);
+    
+    if(yearsPerMinute > 0 && yearsPerMinute < 51) {
+       this.debtLab.setYearsPerMinute(yearsPerMinute);
+       
+    }
+    
+    this.interval = (60000 / (365 * this.debtLab.getYearsPerMinute()));
+};
 
 
 
