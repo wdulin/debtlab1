@@ -1,4 +1,8 @@
 
+
+
+
+
 // Constructor
 function DebtLabBasic() {
 
@@ -58,11 +62,11 @@ function DebtLabBasic() {
 	/**
 	 * amount of public money to create on command
 	 */
-	this.DEFAULT_CREATE_PUBLIC_MONEY_AMOUNT = 1000;
+	this.DEFAULT_CREATE_PUBLIC_MONEY_AMOUNT = 100;
 	/**
 	 * Default starting days per minute for speed of simulator.
 	 */
-	this.DEFAULT_YEARS_PER_MINUTE = 2;
+	this.DEFAULT_YEARS_PER_MINUTE = 6;
 	/**
 	 * If true default on payback starts off as true.
 	 */
@@ -108,6 +112,11 @@ function DebtLabBasic() {
 	 */
     this. DAY_MS = 60 * 60 * 1000 * 24;
     
+    /**
+     * Length of trending data
+     */
+     this.TREND_ARRAY_LENGTH = 12;
+    
     
      /**
 	 * Feature 17: While activated erases loans erases loans that come due without
@@ -149,7 +158,7 @@ function DebtLabBasic() {
 	/**
 	 * Amount to add to money supply when creating public money
 	 */
-	this.createPublicMoneyAmount  = 1000;
+	this.createPublicMoneyAmount  = 100;
     
     
     this.publicMoneyCreated = 0;
@@ -159,6 +168,15 @@ function DebtLabBasic() {
 	 * current money supply of economy
 	 */
 	this.currentMoneySupply = 10000;
+    
+    /**
+     * keep track of last money supply change
+	 */
+    this.lastMoneySupply = 10000;
+    this.lastMoneySupplyDayNumber = 0;
+    
+    
+    
 	/**
 	 * current day counter for tracking notes
 	 */
@@ -166,7 +184,7 @@ function DebtLabBasic() {
 	/**
 	 * rate of time passage as days per minute
 	 */
-    this.yearsPerMinute = 2;
+    this.yearsPerMinute = 6;
 	/**
 	 * Amount to add to lender account when doAddToLenderAccount
 	 */
@@ -230,8 +248,32 @@ function DebtLabBasic() {
      */
      this.autoCounter = 0;
     
-    
+    /**
+     * Total interest paid to lenders
+     */
+     this.interestPaid = 0;
    
+    /**
+     * Interest trend
+     */
+     this.interestPaidTrend = 0.0;
+     
+     /**
+      * Current amount owed to lender
+      */
+     this.debtToLender = 0;
+      
+     /**
+      * Debt to Lender trend
+      */
+     this.debtToLenderTrend = 0.0;
+      
+     /**
+      * Last interest amount for calculating 
+      * Lender spending and taxes
+      */
+      this.lastInterestPayment = 0;
+      
     
     // Added fields
     
@@ -292,7 +334,11 @@ DebtLabBasic.prototype.doResetToDefaults = function () {
 
     this.publicMoneyCreated = 0;
 
-	this.currentMoneySupply =  this.DEFAULT_STARTING_MONEY_SUPPLY;
+	this.currentMoneySupply  =  this.DEFAULT_STARTING_MONEY_SUPPLY;
+    this.lastMoneySupply =  this.DEFAULT_STARTING_MONEY_SUPPLY;
+    this.lastMoneySupplyDayNumber = 0;
+    this.moneySupplyTrend = 0.0;
+   
 	
     this.yearsPerMinute = this.DEFAULT_YEARS_PER_MINUTE;
 
@@ -324,6 +370,16 @@ DebtLabBasic.prototype.doResetToDefaults = function () {
     this.autoCountInterval = this.DEFAULT_AUTO_COUNT_INTERVAL;
      
     this.autoCounter = 0;
+    
+    this.interestPaid = 0;
+    this.interestPaidTrend = 0.0;
+    
+    this.debtToLender = 0;
+      
+    this.debtToLenderTrend = 0.0;
+    
+    this.lastInterestPayment = 0;
+
  
 };
 
@@ -354,31 +410,7 @@ DebtLabBasic.prototype.setYearsPerMinute = function(value) {
     }
 };
 
-DebtLabBasic.prototype.setMoneySupply = function(value) {
-    this.currentMoneySupply = value;
-};
 
-DebtLabBasic.prototype.getMoneySupply = function() {
-    return this.currentMoneySupply;
-};
-
-DebtLabBasic.prototype.setAutoTargetMoneySupplyGrow = function(value) {
-    this. autoTargetMoneySupplyGrowFlag = value;
-};
-
-DebtLabBasic.prototype.getAutoTargetMoneySupplyGrow = function() {
-    return this.autoTargetMoneySupplyGrowFlag;
-};
-
-
-
-DebtLabBasic.prototype.setAutoBorrowFlag = function(value) {
-    this.autoBorrowFlag = value;
-};
-
-DebtLabBasic.prototype.getAutoBorrowFlag = function() {
-    return this.autoBorrowFlag;
-};
 
 DebtLabBasic.prototype.setAutoLenderSpendFlag = function(value) {
     this.autoLenderSpendFlag = value;
@@ -429,7 +461,7 @@ DebtLabBasic.prototype.multiplier = function() {
  * has been created.
  */
 DebtLabBasic.prototype.doCreatePublicMoney = function() {
-    this.currentMoneySupply += this.createPublicMoneyAmount;
+    this.setMoneySupply(this.currentMoneySupply += this.createPublicMoneyAmount);
     this.publicMoneyCreated += this.createPublicMoneyAmount;
 };
 
@@ -480,8 +512,8 @@ DebtLabBasic.prototype.getCreatePublicMoneyAmount = function() {
  * 
  * @param {boolean} value 
  */
-DebtLabBasic.prototype.setAutoCreatePublicMoneyFlag = function(value) {
-    this.autoCreatePublicMoneyFlag = value;
+DebtLabBasic.prototype.setAutoTargetMoneySupplyGrow = function(value) {
+    this. autoTargetMoneySupplyGrowFlag = value;
 };
 
 /**
@@ -490,15 +522,17 @@ DebtLabBasic.prototype.setAutoCreatePublicMoneyFlag = function(value) {
  * 
  * @returns {boolean} current value of auto increase target money supply.
  */
-DebtLabBasic.prototype.getAutoCreatePublicMoneyFlag = function() {
-    return this.autoCreatePublicMoneyFlag;
+DebtLabBasic.prototype.getAutoTargetMoneySupplyGrow = function() {
+    return this.autoTargetMoneySupplyGrowFlag;
 };
+
+
 
 /**
  * Target money supply is the value for money supply that the 
  * simulation tries to maintain. This sets the target money supply.
  * 
- * @param {String} value 
+ * @param {int} value 
  */
 DebtLabBasic.prototype.setTargetMoneySupply = function(value) {
     this.targetMoneySupply = value;
@@ -507,7 +541,7 @@ DebtLabBasic.prototype.setTargetMoneySupply = function(value) {
 /**
  * Returns the current value of the target money supply.
  * 
- * @returns {String} Current value of the target money supply.
+ * @returns {int} Current value of the target money supply.
  */
 DebtLabBasic.prototype.getTargetMoneySupply = function() {
     return this.targetMoneySupply;
@@ -516,21 +550,239 @@ DebtLabBasic.prototype.getTargetMoneySupply = function() {
 /**
  * Growth rate for the target money supply.
  * 
- * @param {String} value 
+ * @param {float} value 
  */
 DebtLabBasic.prototype.setTargetMoneySupplyGrowthRate = function(value) {
     this.targetMoneySupplyGrowthRate = value;
 };
 
 /**
- * Returns the current value of the target money supply.
+ * Returns the current value of the target money supply growth rate.
  * 
- * @returns {String} Current value of the target money supply.
+ * @returns {float} Current value of the target money growth rate.
  */
 DebtLabBasic.prototype.getTargetMoneySupplyGrowthRate = function() {
     return this.targetMoneySupplyGrowthRate;
 };
 
+// ******** Money Supply *********
+
+/**
+ * Money supply is total money in the economy available for commerce. 
+ * 
+ * @param {int} value 
+ */
+DebtLabBasic.prototype.setMoneySupply = function(value) {
+    
+    // Dampen change rate calculation
+    var days = this.currentDayNumber - this.lastMoneySupplyDayNumber;
+    if(days > this.autoCountInterval) {
+        var diff = value - this.lastMoneySupply;
+        this.moneySupplyTrend = (diff/this.lastMoneySupply) * (365/days);
+        this.lastMoneySupplyDayNumber = this.currentDayNumber;
+        this.lastMoneySupply = value;
+    }
+    this.currentMoneySupply = value;
+};
+
+/**
+ * Returns the current value of the money supply.
+ * 
+ * @returns {int} Current value of the money supply.
+ */
+DebtLabBasic.prototype.getMoneySupply = function() {
+    return this.currentMoneySupply;
+};
+
+/**
+ * Returns the trend for the current money supply as
+ * a fraction per year plus or minus. This calculated 
+ * periodically with the autoCountInterval.
+ * 
+ * @returns {float} money supply trend.
+ */
+DebtLabBasic.prototype.getMoneySupplyTrend = function() {
+    return this.moneySupplyTrend;
+}
+
+// ******** Interest Paid *********
+
+/**
+ * Increment the interest paid and adjust yearly trend 
+ * rate for interest
+ * 
+ * @param {int} value 
+ */
+DebtLabBasic.prototype.addInterestPaid = function(value) {
+    
+    // Dampen change rate calculation
+    // var days = this.currentDayNumber - this.lastInterestDayNumber;
+    // if(days > this.autoCountInterval) {
+    //    var diff = value - this.lastIn;
+    //    this.moneySupplyTrend = (diff/this.lastMoneySupply) * (365/days);
+    //    this.lastMoneySupplyDayNumber = this.currentDayNumber;
+    //    this.lastMoneySupply = value;
+    // }
+    this.interestPaid += value;
+};
+
+/**
+ * Returns the total interest paid to lender.
+ * 
+ * @returns {int} total interest paid.
+ */
+DebtLabBasic.prototype.getInterestPaid = function() {
+    return this.interestPaid;
+};
+
+/**
+ * Returns the trend for the yearly interest 
+ * payments
+ * 
+ * @returns {float} interest payments trend.
+ */
+DebtLabBasic.prototype.getInterestPaidTrend = function() {
+    return this.interestPaidTrend;
+}
+
+// ******** Debt to Lender *********
+
+/**
+ * Set the current debt to lender and calculate trend
+ * rate for debt
+ * 
+ * @param {int} value 
+ */
+DebtLabBasic.prototype.setDebtToLender = function(value) {
+    
+    // Dampen change rate calculation
+    // var days = this.currentDayNumber - this.lastInterestDayNumber;
+    // if(days > this.autoCountInterval) {
+    //    var diff = value - this.lastIn;
+    //    this.moneySupplyTrend = (diff/this.lastMoneySupply) * (365/days);
+    //    this.lastMoneySupplyDayNumber = this.currentDayNumber;
+    //    this.lastMoneySupply = value;
+    // }
+    this.debtToLender= value;
+};
+
+/**
+ * Returns the current debt to lender
+ * 
+ * @returns {int} current debt to lender.
+ */
+DebtLabBasic.prototype.getDebtToLender = function() {
+    return this.interestPaid;
+};
+
+/**
+ * Returns the trend for the debt to lender 
+ * 
+ * @returns {float} debt to lender trend.
+ */
+DebtLabBasic.prototype.getDebtToLenderTrend = function() {
+    return this.debtToLenderTrend;
+}
+
+// ******** Borrow *********
+
+/**Borrow money creates a note with the currently 
+ * set parameters of amount and interest rate and 
+ * adds the amount to the money supply. 
+ */
+DebtLabBasic.prototype.doBorrow = function() {
+    
+    // TODO: Implement the borrow operations
+    alert("Borrowing Money");
+    
+};
+
+/**
+ * Sets the simulator to automatically borrow from lender on demand.
+ * 
+ * @param {boolean} value 
+ */
+DebtLabBasic.prototype.setAutoBorrowFlag = function(value) {
+    this.autoBorrowFlag = value;
+};
+
+/**
+ * Returns a boolean indicating if the simulator is automatically borrowing
+ * to maintain money supply.
+ * 
+ * @returns {boolean} current value of auto borrow flag.
+ */
+DebtLabBasic.prototype.getAutoBorrowFlag = function() {
+    return this.autoBorrowFlag;
+};
+
+
+/**
+ * Sets the current amount for new notes.
+ * 
+ * @param {String} value 
+ */
+DebtLabBasic.prototype.setNoteAmount = function(value) {
+    this.noteAmount = value;
+};
+
+/**
+ * Returns the current amount for new notes.
+ * 
+ * @returns {String} Current amount for new notes.
+ */
+DebtLabBasic.prototype.getNoteAmount = function() {
+    return this.noteAmount;
+};
+
+
+/**
+ * Interest rate for new notes.
+ * 
+ * @param {float} value 
+ */
+DebtLabBasic.prototype.setNoteInterestRate = function(value) {
+    this.noteInterestRate = value;
+};
+
+/**
+ * Returns the interest rate for new notes.
+ * 
+ * @returns {float} Current interest rate for new notes.
+ */
+DebtLabBasic.prototype.getNoteInterestRate = function() {
+    return this.noteInterestRate;
+};
+
+// ***** Lender's Account ******
+
+/**
+ * Lender account shows the amount of money that the 
+ * lender is holding out of economy.  
+ * 
+ * @param {int} value 
+ */
+DebtLabBasic.prototype.setLenderAccountBalance = function(value) {
+    
+    // Dampen change rate calculation
+    // var days = this.currentDayNumber - this.lastMoneySupplyDayNumber;
+    // if(days > this.autoCountInterval) {
+    //    var diff = value - this.lastMoneySupply;
+    //    this.moneySupplyTrend = (diff/this.lastMoneySupply) * (365/days);
+    //    this.lastMoneySupplyDayNumber = this.currentDayNumber;
+    //    this.lastMoneySupply = value;
+    // }
+    this.lenderAccountBalance = value;
+};
+
+/**
+ * Returns the current balance of the lender's account.
+ * 
+ * @returns {int} Current balance of the lender's account.
+ */
+DebtLabBasic.prototype.getLenderAccountBalance = function() {
+    return this.lenderAccountBalance;
+};
 
 
 /**
@@ -542,6 +794,9 @@ DebtLabBasic.prototype.getTargetMoneySupplyGrowthRate = function() {
  */
 DebtLabBasic.prototype.handleAutoFlags = function() {
     
+    // Calculate the number of virtual days that have passed
+    var vDays = (this.multiplier * 365)/this.autoCountInterval;
+    
     // Auto Public Money
     if( this.autoCreatePublicMoneyFlag && (this.currentMoneySupply < this.targetMoneySupply)) {
         this.doCreatePublicMoney();
@@ -549,11 +804,25 @@ DebtLabBasic.prototype.handleAutoFlags = function() {
     
     // Auto Target Money Supply
     if( this.autoTargetMoneySupplyGrowFlag) {
-        this.targetMoneySupply += ((this.targetMoneySupply * this.targetMoneySupplyGrowthRate) / ((this.multiplier * 365)/this.autoCountInterval));
+        this.targetMoneySupply += ((this.targetMoneySupply * this.targetMoneySupplyGrowthRate) / vDays);
         
     }
+    
+    
+    
+    
+    
 
 };
+
+
+DebtLabBasic.prototype.AverageArray = function(ar) {
+    var sum = 0.0;
+    for(var i = 0; i < ar.length; i++) {
+        sum += ar[i];
+    }
+    return sum/ar.length;
+}
 
 
 

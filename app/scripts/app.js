@@ -271,6 +271,7 @@ SimulatorApp.prototype.drawCreatePublicMoney = function() {
      button1.style.backgroundColor = "#FF0000";
      button1.onclick = function(e) {
          that.debtLab.doCreatePublicMoney();
+         that.updateUI();
      };
      this.domRootContainer.htmlElement.appendChild(button1);
      this.domSubmitCreatePublicMoneyAmount = button1;
@@ -505,7 +506,9 @@ SimulatorApp.prototype.drawMoneySupplyTarget = function() {
 }
 
 
-
+/**
+ * Setup the Money Supply Box for the UI.
+ */
 SimulatorApp.prototype.drawMoneySupply = function() {
      var g = new createjs.Graphics();
      var that = this;
@@ -549,6 +552,19 @@ SimulatorApp.prototype.drawMoneySupply = function() {
     this.domRootContainer.htmlElement.appendChild(input);
     this.domInputMoneySupply = input;
     
+    
+    // Create a div for displaying trend indicator
+    var div1 = document.createElement("div");
+    div1.id = "displayMoneySupplyTrend";
+    div1.innerHTML = "0.0%";
+    div1.style.width = 30 + 'px';
+    div1.style.position = "absolute";
+    div1.style.fontSize = 12 + "px";
+    div1.style.textAlign = 'center';
+    div1.style.backgroundColor = "#aaaaaa"
+    this.domRootContainer.htmlElement.appendChild(div1);
+    this.domMoneySupplyTrend = div1;
+    
      
           
      var c = this.boxMoneySupply = new createjs.Container();
@@ -560,24 +576,30 @@ SimulatorApp.prototype.drawMoneySupply = function() {
      c.addChild(s);
      c.addChild(t);
      c.addChild(this.upMoneySupply);
-     this.upMoneySupply.gotoAndStop("disabled");
+     // this.upMoneySupply.gotoAndStop("disabled");
      
      
      c.x = 55;
      c.y = 342;
      this.stage.addChild(c);
+     
+     
      var pt = this.boxMoneySupply.localToGlobal(60, 60);
      this.domInputMoneySupply.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
      this.domInputMoneySupply.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
     
-     
+     pt = this.boxMoneySupply.localToGlobal(10, 50);
+     this.domMoneySupplyTrend.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domMoneySupplyTrend.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
      
      this.stage.update();
      
      
 }
 
-
+/**
+ * Setup the Interest Paid Box for the UI.
+ */
 SimulatorApp.prototype.drawInterestPaid = function() {
      var g = new createjs.Graphics();
         g.setStrokeStyle(1);
@@ -589,6 +611,13 @@ SimulatorApp.prototype.drawInterestPaid = function() {
      t.x = 116;
      t.y = 25;
      t.textAlign = "center";
+     
+     
+     
+     
+    
+     
+     
      
     var div = document.createElement("div");
     div.id = "showInterestPaid";
@@ -602,6 +631,20 @@ SimulatorApp.prototype.drawInterestPaid = function() {
     
     this.domRootContainer.htmlElement.appendChild(div);
     this.domShowInterestPaid = div;
+    
+    // Create a div for displaying trend indicator
+    var div1 = document.createElement("div");
+    div1.id = "displayInterestPaidTrend";
+    div1.innerHTML = "0.0%";
+    div1.style.width = 30 + 'px';
+    div1.style.position = "absolute";
+    div1.style.fontSize = 12 + "px";
+    div1.style.textAlign = 'center';
+    div1.style.backgroundColor = "#aaaaaa"
+    this.domRootContainer.htmlElement.appendChild(div1);
+    this.domInterestPaidTrend = div1;
+    
+    
     
      
           
@@ -617,16 +660,21 @@ SimulatorApp.prototype.drawInterestPaid = function() {
      this.domShowInterestPaid.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
      this.domShowInterestPaid.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
     
-     
+     pt = this.boxShowInterest.localToGlobal(10, 37);
+     this.domInterestPaidTrend.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domInterestPaidTrend.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
      
      this.stage.update();
      
      
 }
 
+/**
+ * Setup the Debt to Lender Box for the UI.
+ */
 SimulatorApp.prototype.drawDebtToLender = function() {
      var g = new createjs.Graphics();
-        g.setStrokeStyle(1);
+     g.setStrokeStyle(1);
      g.beginStroke(createjs.Graphics.getRGB(0,0,0));
      g.beginFill("#F562E9");
      g.drawRoundRect(0, 0, 200, 90, 5);
@@ -649,7 +697,18 @@ SimulatorApp.prototype.drawDebtToLender = function() {
     this.domRootContainer.htmlElement.appendChild(div);
     this.domShowDebtToLender = div;
     
-     
+      // Create a div for displaying trend indicator
+    var div1 = document.createElement("div");
+    div1.id = "displayDebtToLenderTrend";
+    div1.innerHTML = "0.0%";
+    div1.style.width = 30 + 'px';
+    div1.style.position = "absolute";
+    div1.style.fontSize = 12 + "px";
+    div1.style.textAlign = 'center';
+    div1.style.backgroundColor = "#aaaaaa"
+    this.domRootContainer.htmlElement.appendChild(div1);
+    this.domDebtToLenderTrend = div1;
+    
           
      var c = this.boxShowDebtToLender = new createjs.Container();
      c.addChild(s);
@@ -663,7 +722,9 @@ SimulatorApp.prototype.drawDebtToLender = function() {
      this.domShowDebtToLender.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
      this.domShowDebtToLender.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
     
-     
+     pt = this.boxShowDebtToLender.localToGlobal(10, 37);
+     this.domDebtToLenderTrend.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domDebtToLenderTrend.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
      
      this.stage.update();
      
@@ -730,6 +791,9 @@ SimulatorApp.prototype.drawPaybackBox = function() {
 
 
 
+/**
+ * Setup the Borrow Box for the UI.
+ */
 SimulatorApp.prototype.drawBorrowBox = function() {
      var g = new createjs.Graphics();
      var that = this;
@@ -758,6 +822,13 @@ SimulatorApp.prototype.drawBorrowBox = function() {
      button1.style.fontWeight = "bold";
      button1.style.textAlign = 'center';
      button1.style.backgroundColor = "#FF0000";
+     button1.onclick = function(e) {
+         that.debtLab.doBorrow();
+     };
+     
+  
+   
+     
      this.domRootContainer.htmlElement.appendChild(button1);
      this.domSubmitBorrow = button1;
      
@@ -1335,6 +1406,9 @@ SimulatorApp.prototype.drawAddToLenderAccount = function() {
      
 }
 
+/**
+ * Setup the Lender Account Box for the UI.
+ */
 SimulatorApp.prototype.drawLenderAccount = function() {
      var g = new createjs.Graphics();
      var that = this;
@@ -1612,7 +1686,7 @@ SimulatorApp.prototype.updateUI = function () {
     
     this.setAutoButton(this.debtLab.getAutoTargetMoneySupplyGrow(), this.domAutoGrowTargetMoneySupply);
     this.setAutoButton(this.debtLab.getAutoCreatePublicMoneyFlag(), this.domAutoCreatePublicMoney);
-    this.setAutoButton(this.debtLab.getAutoBorrowFlag(), this.domSubmitAutoBorrow);
+    
     this.setAutoButton(this.debtLab.getAutoLenderSpendFlag(), this.domSubmitAutoSpend);
     this.setAutoButton(this.debtLab.getAutoTaxLenderFlag(), this.domSubmitAutoTax);
     this.setAutoButton(this.debtLab.getAutoAddToLenderAccountFlag(), this.domAutoAddMoneyToLenderAccount);
@@ -1627,22 +1701,63 @@ SimulatorApp.prototype.updateUI = function () {
     }
 
     // Current Money Supply
-     if(this.domInputMoneySupply) {
+    if(this.domInputMoneySupply) {
          this.domInputMoneySupply.value = "$ " + _.str.numberFormat(this.debtLab.getMoneySupply(),0);
     }
     
+    if(this.domMoneySupplyTrend) {
+        this.domMoneySupplyTrend.innerHTML = _.str.numberFormat(this.debtLab.getMoneySupplyTrend() * 100, 1) + "%";
+    } 
+    
 
     // Target Money Supply
-    // TargetMoneySupplyGrowthRate
-    // TargetMoneySupply
     if(this.domInputMoneySupplyTarget) {
         this.domInputMoneySupplyTarget.value = "$ " + _.str.numberFormat(this.debtLab.getTargetMoneySupply(),0);
     }
     
     if(this.domTargetMoneySupplyGrowthRate) {
-        this.domTargetMoneySupplyGrowthRate.value =  _.str.numberFormat(this.debtLab.getTargetMoneySupplyGrowthRate() * 100,2) + "%/year";
+        this.domTargetMoneySupplyGrowthRate.value =  _.str.numberFormat(this.debtLab.getTargetMoneySupplyGrowthRate() * 100, 1) + "%/year";
+    }
+    
+    
+   
+    // Interest Paid
+    if(this.domShowInterestPaid) {
+         this.domShowInterestPaid.innerHTML = "$ " + _.str.numberFormat(this.debtLab.getInterestPaid(),0);
+    }
+    
+    if(this.domInterestPaidTrend) {
+        this.domInterestPaidTrend.innerHTML = _.str.numberFormat(this.debtLab.getInterestPaidTrend() * 100, 1) + "%";
+    } 
+    
+    // Debt to Lender
+    if(this.domShowDebtToLender) {
+         this.domShowDebtToLender.innerHTML = "$ " + _.str.numberFormat(this.debtLab.getDebtToLender(),0);
+    }
+    
+    if(this.domDebtToLenderTrend) {
+        this.domDebtToLenderTrend.innerHTML = _.str.numberFormat(this.debtLab.getDebtToLenderTrend() * 100, 1) + "%";
+    } 
+    
+    
+    // Borrow money
+    if(this.domAutoBorrowAmount) {
+        this.domAutoBorrowAmount.value = "$ " + _.str.numberFormat(this.debtLab.getNoteAmount(),0);
+    }
+    
+    if(this.domAutoBorrowPercent) {
+        this.domAutoBorrowPercent.value =  _.str.numberFormat(this.debtLab.getNoteInterestRate() * 100, 1) + "%";
+    }
+    if(this.domSubmitAutoBorrow) {
+       this.setAutoButton(this.debtLab.getAutoBorrowFlag(), this.domSubmitAutoBorrow);
     }
 
+    // Lender Account Balance
+    if(this.domInputLenderAccount) {
+         this.domInputLenderAccount.value = "$ " + _.str.numberFormat(this.debtLab.getLenderAccountBalance(), 0);
+    }
+
+    
 
 };
 
@@ -1686,6 +1801,7 @@ SimulatorApp.prototype.updateParameters = function() {
                                  100,
                                  1000000);
                                  
+                                 
     // Target Money Supply
     this.setIntPropertyFromInput(this.debtLab.setTargetMoneySupply,
                                  this.domInputMoneySupplyTarget,
@@ -1698,6 +1814,25 @@ SimulatorApp.prototype.updateParameters = function() {
                                    2.0);
                                    
                                    
+    // Default Note Amount
+    this.setIntPropertyFromInput(this.debtLab.setNoteAmount,
+                            this.domAutoBorrowAmount,
+                            1,
+                            10000);  
+    
+    // Default Note Interest rate
+    this.setPercentPropertyFromInput(this.debtLab.setNoteInterestRate,
+                                   this.domAutoBorrowPercent,
+                                   -0.5,
+                                   2.0);
+                                   
+    // Change lender account balance
+    // Target Money Supply
+    this.setIntPropertyFromInput(this.debtLab.setLenderAccountBalance,
+                                 this.domInputLenderAccount,
+                                 100,
+                                 10000000);
+    
     
 };
 
