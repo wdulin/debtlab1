@@ -91,6 +91,17 @@ function DebtLabBasic() {
 	 * Default rate at which target money supply should grow
 	 */
 	this.DEFAULT_TARGET_MONEY_SUPPLY_GROWTH_RATE = 0.05;
+    /**
+     * Default multiplier for simulation day increment
+	 */
+	this.DEFAULT_SPEED_MULTIPLIER = 1;
+    
+    /**
+     * Number of steps to count before
+     * processing auto flags
+     */
+	this.DEFAULT_AUTO_COUNT_INTERVAL = 30;
+    
     
     /**
      * Milliseconds in a day.
@@ -139,6 +150,11 @@ function DebtLabBasic() {
 	 * Amount to add to money supply when creating public money
 	 */
 	this.createPublicMoneyAmount  = 1000;
+    
+    
+    this.publicMoneyCreated = 0;
+    
+    
 	/**
 	 * current money supply of economy
 	 */
@@ -198,6 +214,25 @@ function DebtLabBasic() {
 	 */
 	this.targetMoneySupplyGrowthRate = 0.05;
     
+    /**
+     * Default multiplier for simulation day increment
+     */
+	this.multiplier = 1; 
+    
+    /**
+     * Number of steps to count before
+     * processing auto flags
+     */
+     this.autoCountInterval = 30;
+    
+    /**
+     * Counter for interval for processing automatic parameters
+     */
+     this.autoCounter = 0;
+    
+    
+   
+    
     // Added fields
     
     this.currDate = new Date(2000, 0, 1);
@@ -217,8 +252,17 @@ function DebtLabBasic() {
 
 DebtLabBasic.prototype.stepSimulation = function () {
     this.currDate = new Date(this.currDate.getTime() + this.DAY_MS);
-    this.currentDayNumber += 1;
-    this.currentMoneySupply += 1;
+    this.currentDayNumber += this.multiplier;
+    // this.currentMoneySupply += 1;
+    this.autoCounter += this.multiplier;
+    
+    
+    // Don't call handleAutoFlags every step to
+    // avoid rounding problems on yearly percentage rates
+    if ( this.autoCounter >= this.autoCountInterval) {
+        this.handleAutoFlags();
+        this.autoCounter = 0;
+    }
 };
 
 
@@ -246,6 +290,8 @@ DebtLabBasic.prototype.doResetToDefaults = function () {
 
 	this.createPublicMoneyAmount  = this.DEFAULT_CREATE_PUBLIC_MONEY_AMOUNT;
 
+    this.publicMoneyCreated = 0;
+
 	this.currentMoneySupply =  this.DEFAULT_STARTING_MONEY_SUPPLY;
 	
     this.yearsPerMinute = this.DEFAULT_YEARS_PER_MINUTE;
@@ -272,6 +318,12 @@ DebtLabBasic.prototype.doResetToDefaults = function () {
     
 	
 	this.targetMoneySupplyGrowthRate = this.DEFAULT_TARGET_MONEY_SUPPLY_GROWTH_RATE;
+    
+    this.multiplier = this.DEFAULT_SPEED_MULTIPLIER;
+    
+    this.autoCountInterval = this.DEFAULT_AUTO_COUNT_INTERVAL;
+     
+    this.autoCounter = 0;
  
 };
 
@@ -318,13 +370,6 @@ DebtLabBasic.prototype.getAutoTargetMoneySupplyGrow = function() {
     return this.autoTargetMoneySupplyGrowFlag;
 };
 
-DebtLabBasic.prototype.setAutoCreatePublicMoneyFlag = function(value) {
-    this.autoCreatePublicMoneyFlag = value;
-};
-
-DebtLabBasic.prototype.getAutoCreatePublicMoneyFlag = function() {
-    return this.autoCreatePublicMoneyFlag;
-};
 
 
 DebtLabBasic.prototype.setAutoBorrowFlag = function(value) {
@@ -365,6 +410,149 @@ DebtLabBasic.prototype.setAutoLendFromLenderDepositsFlag = function(value) {
 
 DebtLabBasic.prototype.getAutoLendFromLenderDepositsFlag = function() {
     return this.autoLendFromLenderDepositsFlag;
+};
+
+DebtLabBasic.prototype.multiplier= function(value) {
+    this.multiplier = value;
+};
+
+DebtLabBasic.prototype.multiplier = function() {
+    return this.multiplier;
+};
+
+
+// ******** Public Money *********
+
+/**
+ * Create public money adds non-debt money to
+ * the money supply and keeps track of how much
+ * has been created.
+ */
+DebtLabBasic.prototype.doCreatePublicMoney = function() {
+    this.currentMoneySupply += this.createPublicMoneyAmount;
+    this.publicMoneyCreated += this.createPublicMoneyAmount;
+};
+
+/**
+ * Sets the simulator to automatically create public money on demand.
+ * 
+ * @param {boolean} value 
+ */
+DebtLabBasic.prototype.setAutoCreatePublicMoneyFlag = function(value) {
+    this.autoCreatePublicMoneyFlag = value;
+};
+
+/**
+ * Returns a boolean indicating if the simulator is automatically creating
+ * public money on demand.
+ * 
+ * @returns {boolean} current value of auto create public money.
+ */
+DebtLabBasic.prototype.getAutoCreatePublicMoneyFlag = function() {
+    return this.autoCreatePublicMoneyFlag;
+};
+
+/**
+ * Sets the amount of public money to add to money supply.
+ * 
+ * @param {String} value 
+ */
+DebtLabBasic.prototype.setCreatePublicMoneyAmount = function(value) {
+    this.createPublicMoneyAmount = value;
+};
+
+/**
+ * Returns the current amount the simulator is using to add to money supply.
+ * 
+ * @returns {String} Current value of create public money amount.
+ */
+DebtLabBasic.prototype.getCreatePublicMoneyAmount = function() {
+    return this.createPublicMoneyAmount;
+};
+
+
+
+// ******** Target Money Supply *********
+
+
+/**
+ * Sets the simulator to automatically increase the target money supply.
+ * 
+ * @param {boolean} value 
+ */
+DebtLabBasic.prototype.setAutoCreatePublicMoneyFlag = function(value) {
+    this.autoCreatePublicMoneyFlag = value;
+};
+
+/**
+ * Returns a boolean indicating if the simulator is automatically
+ * increasing the target money supply.
+ * 
+ * @returns {boolean} current value of auto increase target money supply.
+ */
+DebtLabBasic.prototype.getAutoCreatePublicMoneyFlag = function() {
+    return this.autoCreatePublicMoneyFlag;
+};
+
+/**
+ * Target money supply is the value for money supply that the 
+ * simulation tries to maintain. This sets the target money supply.
+ * 
+ * @param {String} value 
+ */
+DebtLabBasic.prototype.setTargetMoneySupply = function(value) {
+    this.targetMoneySupply = value;
+};
+
+/**
+ * Returns the current value of the target money supply.
+ * 
+ * @returns {String} Current value of the target money supply.
+ */
+DebtLabBasic.prototype.getTargetMoneySupply = function() {
+    return this.targetMoneySupply;
+};
+
+/**
+ * Growth rate for the target money supply.
+ * 
+ * @param {String} value 
+ */
+DebtLabBasic.prototype.setTargetMoneySupplyGrowthRate = function(value) {
+    this.targetMoneySupplyGrowthRate = value;
+};
+
+/**
+ * Returns the current value of the target money supply.
+ * 
+ * @returns {String} Current value of the target money supply.
+ */
+DebtLabBasic.prototype.getTargetMoneySupplyGrowthRate = function() {
+    return this.targetMoneySupplyGrowthRate;
+};
+
+
+
+/**
+ * Checks all the automatic flags and applies the appropriate
+ * operations to the state of the simulator. Called with each 
+ * autoCountInterval steps through the simulation. This is done
+ * to avoid truncation of small integer values calculated
+ * on a daily basis.
+ */
+DebtLabBasic.prototype.handleAutoFlags = function() {
+    
+    // Auto Public Money
+    if( this.autoCreatePublicMoneyFlag && (this.currentMoneySupply < this.targetMoneySupply)) {
+        this.doCreatePublicMoney();
+    }
+    
+    // Auto Target Money Supply
+    if( this.autoTargetMoneySupplyGrowFlag) {
+        this.targetMoneySupply += ((this.targetMoneySupply * this.targetMoneySupplyGrowthRate) / ((this.multiplier * 365)/this.autoCountInterval));
+        
+    }
+
 };
 
 

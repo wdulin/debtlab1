@@ -9,7 +9,7 @@
  *   
  *   9) updateParameters
  *  10) updateUI
- *  11)
+ *  11) Trend indicator fields
  *  12) Button click events
  * 
  * DONE:
@@ -20,7 +20,7 @@
  *  
  * 
  * TODO: Simulation
- *   1)
+ *   1) Borrow and Notes 
  * 
  * 
  * 
@@ -208,8 +208,7 @@ SimulatorApp.prototype.initUI = function() {
         })
     );
     
-    this.stage.addChild(this.upMoneySupply);
-    this.upMoneySupply.gotoAndStop("disabled");
+    
         
     this.mainContext.clearRect(0, 0, this.mainContext.canvas.width, this.mainContext.canvas.height);
     
@@ -241,7 +240,9 @@ SimulatorApp.prototype.initUI = function() {
     
 };
 
-
+/**
+ * Setup the Public Money Box for the UI.
+ */
 SimulatorApp.prototype.drawCreatePublicMoney = function() {
      var g = new createjs.Graphics();
      var that = this;
@@ -256,7 +257,7 @@ SimulatorApp.prototype.drawCreatePublicMoney = function() {
      // t.y = 4;
      // t.textAlign = "center";
      
-     
+     // Command for doCreatePublicMoney()
      var button1 = document.createElement("input");
      button1.id = "submitCreatePublicMoneyAmount";
      button1.type = "button";
@@ -268,10 +269,13 @@ SimulatorApp.prototype.drawCreatePublicMoney = function() {
      button1.style.fontWeight = "bold";
      button1.style.textAlign = 'center';
      button1.style.backgroundColor = "#FF0000";
+     button1.onclick = function(e) {
+         that.debtLab.doCreatePublicMoney();
+     };
      this.domRootContainer.htmlElement.appendChild(button1);
      this.domSubmitCreatePublicMoneyAmount = button1;
      
-     
+     // Command for setting Auto Create Public Money
      var auto = document.createElement("input");
      auto.id = "submitAutoCreatePublicMoney";
      auto.type = "button";
@@ -288,7 +292,6 @@ SimulatorApp.prototype.drawCreatePublicMoney = function() {
      };
      this.domRootContainer.htmlElement.appendChild(auto);
      this.domAutoCreatePublicMoney = auto;
-     
      
      
      
@@ -358,7 +361,9 @@ SimulatorApp.prototype.drawCreatePublicMoney = function() {
 
 
 
-
+/**
+ * Setup the Target Money Supply Box for the UI.
+ */
 SimulatorApp.prototype.drawMoneySupplyTarget = function() {
      var g = new createjs.Graphics();
      var that = this;
@@ -548,8 +553,8 @@ SimulatorApp.prototype.drawMoneySupply = function() {
           
      var c = this.boxMoneySupply = new createjs.Container();
      
-     this.upMoneySupply.x = 20;
-     this.upMoneySupply.y = 40;
+     this.upMoneySupply.x = 60;
+     this.upMoneySupply.y = 60;
      
      
      c.addChild(s);
@@ -1583,6 +1588,9 @@ SimulatorApp.prototype.drawRuledBackground = function () {
 
 
 
+/**
+ * Update user interface to reflect simulator state.
+ */
 SimulatorApp.prototype.updateUI = function () {
     
     var d,m,y;
@@ -1595,9 +1603,7 @@ SimulatorApp.prototype.updateUI = function () {
     if (this.DEBUG) {
        this.domDisplayFps.innerHTML = this.tplFps({fps:createjs.Ticker.getFPS()});
     }
-    if(this.domInputMoneySupply) {
-         this.domInputMoneySupply.value = this.debtLab.getMoneySupply();
-    }
+   
     
     if (this.domInputYearsPerMinute) {
         this.domInputYearsPerMinute.value = this.debtLab.getYearsPerMinute();
@@ -1612,11 +1618,32 @@ SimulatorApp.prototype.updateUI = function () {
     this.setAutoButton(this.debtLab.getAutoAddToLenderAccountFlag(), this.domAutoAddMoneyToLenderAccount);
     this.setAutoButton(this.debtLab.getAutoLendFromLenderDepositsFlag(), this.domAutoLendFromDeposits);
     
+    // Public Money Box
+    if(this.domCreatePublicMoneyAmount) {
+        this.domCreatePublicMoneyAmount.value = "$ " + _.str.numberFormat(this.debtLab.getCreatePublicMoneyAmount(),0);
+    }
+    if(this.domAutoCreatePublicMoney){
+        this.setAutoButton(this.debtLab.getAutoCreatePublicMoneyFlag(), this.domAutoCreatePublicMoney);
+    }
+
+    // Current Money Supply
+     if(this.domInputMoneySupply) {
+         this.domInputMoneySupply.value = "$ " + _.str.numberFormat(this.debtLab.getMoneySupply(),0);
+    }
     
 
-
-     
+    // Target Money Supply
+    // TargetMoneySupplyGrowthRate
+    // TargetMoneySupply
+    if(this.domInputMoneySupplyTarget) {
+        this.domInputMoneySupplyTarget.value = "$ " + _.str.numberFormat(this.debtLab.getTargetMoneySupply(),0);
+    }
     
+    if(this.domTargetMoneySupplyGrowthRate) {
+        this.domTargetMoneySupplyGrowthRate.value =  _.str.numberFormat(this.debtLab.getTargetMoneySupplyGrowthRate() * 100,2) + "%/year";
+    }
+
+
 };
 
 SimulatorApp.prototype.setAutoButton = function(flag, button) {
@@ -1629,25 +1656,105 @@ SimulatorApp.prototype.setAutoButton = function(flag, button) {
     }
 };
 
-
+/**
+ * Update the simulator parameters from those set in
+ * the user interface.
+ */
 SimulatorApp.prototype.updateParameters = function() {
-    var moneySupply = parseInt(this.domInputMoneySupply.value, 10);
-    if(moneySupply > 100 && moneySupply < 1000000) {
-       this.debtLab.setMoneySupply(moneySupply);
-    }
+    var value;
     
-    var yearsPerMinute = parseInt(this.domInputYearsPerMinute.value, 10);
     
-    if(yearsPerMinute > 0 && yearsPerMinute < 51) {
-       this.debtLab.setYearsPerMinute(yearsPerMinute);
+    
+    // Years per minute simulator speed setting
+    value = parseInt(this.domInputYearsPerMinute.value, 10);
+    if(value > 0 && value < 51) {
+       this.debtLab.setYearsPerMinute(value);
        
     }
-    
     this.interval = (60000 / (365 * this.debtLab.getYearsPerMinute()));
+    
+    
+    // Create Public Money Amount
+    this.setIntPropertyFromInput(this.debtLab.setCreatePublicMoneyAmount,
+                            this.domCreatePublicMoneyAmount,
+                            1,
+                            10000);
+                            
+    // Current Money Supply
+    this.setIntPropertyFromInput(this.debtLab.setMoneySupply,
+                                 this.domInputMoneySupply,
+                                 100,
+                                 1000000);
+                                 
+    // Target Money Supply
+    this.setIntPropertyFromInput(this.debtLab.setTargetMoneySupply,
+                                 this.domInputMoneySupplyTarget,
+                                 100,
+                                 10000000);
+                                 
+    this.setPercentPropertyFromInput(this.debtLab.setTargetMoneySupplyGrowthRate,
+                                   this.domTargetMoneySupplyGrowthRate,
+                                   -0.5,
+                                   2.0);
+                                   
+                                   
+    
+};
+
+/**
+ * Set the value of a float percent fraction property from an input field.
+ * 
+ * @param setter {setter function} property setter for object
+ * @param input {DOMElement} input DOM from user interface
+ * @param min {int} minimum value of parameter
+ * @param max {int} maximum value of parameter
+ */
+SimulatorApp.prototype.setPercentPropertyFromInput = function(setter, input, min, max) {
+    
+    var value = this.parseFormattedPercent(input.value);
+    console.log("Percent fraction: " + value);
+    if(value >= min && value <= max) {
+        setter.call(this.debtLab, value);
+    }
 };
 
 
 
+/**
+ * Set the value of a integer object property from an input field.
+ * 
+ * @param setter {setter function} property setter for object
+ * @param input {DOMElement} input DOM from user interface
+ * @param min {int} minimum value of parameter
+ * @param max {int} maximum value of parameter
+ */
+SimulatorApp.prototype.setIntPropertyFromInput = function(setter, input, min, max) {
+    var value = this.parseFormattedInt(input.value);
+    if(value >= min && value <= max) {
+        setter.call(this.debtLab, value);
+    }
+};
+
+/**
+ * takes a string representation of a integer 
+ * value and returns the integer
+ * @param {String} string with embedded integer
+ */
+SimulatorApp.prototype.parseFormattedInt = function(value) {
+      return parseInt(value.replace(/[\$,\,]/g,""), 10);
+};
+
+/**
+ * takes a string representation of a percentage
+ * value and returns the double fractional value
+ * @param {String} string with embedded percentage
+ */
+SimulatorApp.prototype.parseFormattedPercent = function(value) {
+      if(value.indexOf("%")=== -1) {
+          value += "%";
+      }
+      return parseFloat(value.substring(0,value.indexOf("%")),10)/100;
+};
 
 
 var app = new SimulatorApp();
