@@ -834,8 +834,10 @@ SimulatorApp.prototype.drawBorrowBox = function() {
      button1.style.backgroundColor = "#FF0000";
      button1.onclick = function(e) {
          that.debtLab.doBorrow();
+         that.updateUI();
      };
      
+
     
    
      
@@ -960,6 +962,9 @@ SimulatorApp.prototype.drawBorrowBox = function() {
      
 };
 
+/**
+ * Setup the Lender Spend Box for the UI.
+ */
 SimulatorApp.prototype.drawSpendBox = function() {
      var g = new createjs.Graphics();
      var that = this;
@@ -990,6 +995,12 @@ SimulatorApp.prototype.drawSpendBox = function() {
      button1.style.fontWeight = "bold";
      button1.style.textAlign = 'center';
      button1.style.backgroundColor = "#FF0000";
+     button1.onclick = function(e) {
+         that.debtLab.doLenderSpend();
+         that.updateUI();
+     };
+    
+
      this.domRootContainer.htmlElement.appendChild(button1);
      this.domSubmitSpend = button1;
      
@@ -1098,6 +1109,10 @@ SimulatorApp.prototype.drawSpendBox = function() {
      
 };
 
+
+/**
+ * Setup the Lender Spend Box for the UI.
+ */
 SimulatorApp.prototype.drawTaxBox = function() {
      var g = new createjs.Graphics();
      var that = this;
@@ -1128,6 +1143,12 @@ SimulatorApp.prototype.drawTaxBox = function() {
      button1.style.fontWeight = "bold";
      button1.style.textAlign = 'center';
      button1.style.backgroundColor = "#FF0000";
+      button1.onclick = function(e) {
+         that.debtLab.doTaxLender();
+         that.updateUI();
+     };
+    
+
      this.domRootContainer.htmlElement.appendChild(button1);
      this.domSubmitTax = button1;
      
@@ -1706,9 +1727,7 @@ SimulatorApp.prototype.updateUI = function () {
     this.setAutoButton(this.debtLab.getAutoTargetMoneySupplyGrow(), this.domAutoGrowTargetMoneySupply, "Auto On", "Auto Off");
     this.setAutoButton(this.debtLab.getAutoCreatePublicMoneyFlag(), this.domAutoCreatePublicMoney, "Auto On", "Auto Off");
     
-    this.setAutoButton(this.debtLab.getAutoLenderSpendFlag(), this.domSubmitAutoSpend, "Auto On", "Auto Off");
-    this.setAutoButton(this.debtLab.getAutoTaxLenderFlag(), this.domSubmitAutoTax, "Auto On", "Auto Off");
-    
+   
     this.setAutoButton(this.debtLab.getAutoLendFromLenderDepositsFlag(), this.domAutoLendFromDeposits, "Auto On", "Auto Off");
     
     this.setAutoButton(this.debtLab.getDefaultOnPaybackFlag(), this.domSubmitDefault, "Defaulting On", "Default Off");
@@ -1771,7 +1790,7 @@ SimulatorApp.prototype.updateUI = function () {
         this.domAutoBorrowPercent.value =  _.str.numberFormat(this.debtLab.getNoteInterestRate() * 100, 1) + "%";
     }
     if(this.domSubmitAutoBorrow) {
-       this.setAutoButton(this.debtLab.getAutoBorrowFlag(), this.domSubmitAutoBorrow);
+       this.setAutoButton(this.debtLab.getAutoBorrowFlag(), this.domSubmitAutoBorrow, "Auto On", "Auto Off");
     }
 
     // Lender Account Balance
@@ -1789,6 +1808,26 @@ SimulatorApp.prototype.updateUI = function () {
        this.setAutoButton(this.debtLab.getAutoAddToLenderAccountFlag(), this.domAutoAddMoneyToLenderAccount, "Auto On", "Auto Off");
     }
 
+    // Lender Spend
+    if(this.domAutoSpendPercent) {
+        this.domAutoSpendPercent.value =  _.str.numberFormat(this.debtLab.getLenderSpendRate() * 100, 1) + "%";
+    }
+    
+    if(this.domSubmitAutoSpend) {
+       this.setAutoButton(this.debtLab.getAutoLenderSpendFlag(), this.domSubmitAutoSpend, "Auto On", "Auto Off");
+    }
+    
+    
+    // Tax Lender
+    if(this.domAutoTaxPercent) {
+        this.domAutoTaxPercent.value =  _.str.numberFormat(this.debtLab.getTaxRate() * 100, 1) + "%";
+    }
+    
+    if(this.domSubmitAutoTax) {
+       this.setAutoButton(this.debtLab.getAutoTaxLenderFlag(), this.domSubmitAutoTax, "Auto On", "Auto Off");
+    }
+    
+       
 
     
 
@@ -1872,9 +1911,19 @@ SimulatorApp.prototype.updateParameters = function() {
                             this.domAddMoneyToLenderAccountAmount,
                             1,
                             10000);
-   
-    
-    
+                            
+    // Lender spend rate
+    this.setPercentPropertyFromInput(this.debtLab.setLenderSpendRate,
+                                   this.domAutoSpendPercent,
+                                   0.0,
+                                   2.0);
+                                   
+     // Lender tax rate
+    this.setPercentPropertyFromInput(this.debtLab.setTaxRate,
+                                   this.domAutoTaxPercent,
+                                   0.0,
+                                   2.0);
+
 };
 
 /**

@@ -310,7 +310,33 @@ DebtLabBasic.prototype.stepSimulation = function () {
         this.handleAutoFlags();
         this.autoCounter = 0;
     }
+    
+ 
+    
+    
 };
+
+/**
+ * Payback note
+ */
+DebtLabBasic.prototype.paybackNote = function() {
+    
+    // TODO: Complete this feature
+    this.lastInterestPayment = 100;
+    
+    
+    // Handle lender auto tax
+    if(this.autoTaxLenderFlag) {
+        this.doTaxLender();
+    }
+    
+    // Handle lender auto spend
+    if(this.autoLenderSpendFlag) {
+        this.doLenderSpend();
+    }
+    
+    
+}
 
 
 /**
@@ -420,21 +446,6 @@ DebtLabBasic.prototype.setYearsPerMinute = function(value) {
 
 
 
-DebtLabBasic.prototype.setAutoLenderSpendFlag = function(value) {
-    this.autoLenderSpendFlag = value;
-};
-
-DebtLabBasic.prototype.getAutoLenderSpendFlag = function() {
-    return this.autoLenderSpendFlag;
-};
-
-DebtLabBasic.prototype.setAutoTaxLenderFlag = function(value) {
-    this.autoTaxLenderFlag = value;
-};
-
-DebtLabBasic.prototype.getAutoTaxLenderFlag = function() {
-    return this.autoTaxLenderFlag;
-};
 
 
 
@@ -713,6 +724,116 @@ DebtLabBasic.prototype.getDefaultOnPaybackFlag = function() {
 };
 
 
+// ***** Lender Spends ******
+
+/**
+ * Lender spends allows spending of lender interest back into the money supply.
+ */
+DebtLabBasic.prototype.doLenderSpend = function() {
+    
+    
+    this.setLenderAccountBalance(this.lenderAccountBalance -= (this.lastInterestPayment * this.lenderSpendRate));
+     
+};
+
+
+/**
+ * Spend rate of last interest payment.
+ * 
+ * @param {float} value 
+ */
+DebtLabBasic.prototype.setLenderSpendRate = function(value) {
+    this.lenderSpendRate = value;
+};
+
+/**
+ * Returns the spend rate of last interest payment.
+ * 
+ * @returns {float} Current value of the spend rate of last interest payment.
+ */
+DebtLabBasic.prototype.getLenderSpendRate = function() {
+    return this.lenderSpendRate;
+};
+
+
+/**
+ * Sets the simulator to automatically spend a percentage
+ * of interest payments.
+ * 
+ * 
+ * @param {boolean} value 
+ */
+DebtLabBasic.prototype.setAutoLenderSpendFlag = function(value) {
+    this.autoLenderSpendFlag = value;
+};
+
+/**
+ * Returns a boolean indicating if the simulator is automatically
+ * spending a percentage of interest payments
+ * 
+ * @returns {boolean} current value of auto borrow flag.
+ */
+DebtLabBasic.prototype.getAutoLenderSpendFlag = function() {
+    return this.autoLenderSpendFlag;
+};
+
+// ***** Tax Lender ******
+
+/**
+ * Tax lender allows taxing of lender interest back into the money supply.
+ */
+DebtLabBasic.prototype.doTaxLender = function() {
+    
+    
+    this.setLenderAccountBalance(this.lenderAccountBalance -= (this.lastInterestPayment * this.lenderTaxRate));
+     
+};
+
+
+/**
+ * Tax rate of last interest payment.
+ * 
+ * @param {float} value 
+ */
+DebtLabBasic.prototype.setTaxRate = function(value) {
+    this.lenderTaxRate = value;
+};
+
+/**
+ * Returns the tax rate of last interest payment.
+ * 
+ * @returns {float} Current value of the tax rate of last interest payment.
+ */
+DebtLabBasic.prototype.getTaxRate = function() {
+    return this.lenderTaxRate;
+};
+
+
+
+
+/**
+ * Sets the simulator to automatically tax a percentage
+ * of interest payments.
+ * 
+ * 
+ * @param {boolean} value 
+ */
+DebtLabBasic.prototype.setAutoTaxLenderFlag = function(value) {
+    this.autoTaxLenderFlag = value;
+};
+
+
+/**
+ * Returns a boolean indicating if the simulator is automatically
+ * taxing a percentage of interest payments
+ * 
+ * @returns {boolean} current value of auto borrow flag.
+ */
+DebtLabBasic.prototype.getAutoTaxLenderFlag = function() {
+    return this.autoTaxLenderFlag;
+};
+
+
 
 // ***** Add to Lender Account ******
 
@@ -725,7 +846,6 @@ DebtLabBasic.prototype.doAddToLenderAccount = function() {
    
     
 };
-
 
 
 /**
@@ -780,9 +900,9 @@ DebtLabBasic.prototype.getAutoAddToLenderAccountFlag = function() {
  * adds the amount to the money supply. 
  */
 DebtLabBasic.prototype.doBorrow = function() {
-    
+    this.paybackNote();
     // TODO: Implement the borrow operations
-    alert("Borrowing Money");
+    // alert("Borrowing Money");
     
 };
 
