@@ -103,8 +103,7 @@ SimulatorApp.prototype.tick = function (timeElapsed) {
     
     //var delta = timeElapsed - this.lastTime;
     this.lastCount += timeElapsed;
-   // this.lastTime = timeElapsed;
-    // console.log(timeElapsed);
+  
     
     if (this.running) {
         if (this.lastCount > this.interval) {
@@ -170,6 +169,9 @@ SimulatorApp.prototype.initUI = function() {
        that.debtLab.initClock(new Date(2012, 0 , 1));
        that.updateUI();
     };
+    
+    
+    
     
     this.interval = (60000 / (365 * this.debtLab.getYearsPerMinute()));
     
@@ -731,7 +733,9 @@ SimulatorApp.prototype.drawDebtToLender = function() {
      
 };
 
-
+/**
+ * Setup the Payback Box for the UI.
+ */
 SimulatorApp.prototype.drawPaybackBox = function() {
      var g = new createjs.Graphics();
      var that = this;
@@ -755,14 +759,20 @@ SimulatorApp.prototype.drawPaybackBox = function() {
      var button1 = document.createElement("input");
      button1.id = "submitDefault";
      button1.type = "button";
-     button1.value = "Default On Payback";
+     button1.value = "Default Off";
      button1.style.width = 160 + 'px';
      button1.style.height = 40 + 'px';
      button1.style.position = "absolute";
      button1.style.fontSize = 14 + "px";
      button1.style.fontWeight = "bold";
      button1.style.textAlign = 'center';
-     button1.style.backgroundColor = "#FF0000";
+     button1.style.backgroundColor = "#aaaaaa";
+     button1.onclick = function(e) {
+         that.debtLab.setDefaultOnPaybackFlag(!that.debtLab.getDefaultOnPaybackFlag());
+         that.updateUI();
+     };
+     
+     
      this.domRootContainer.htmlElement.appendChild(button1);
      this.domSubmitDefault = button1;
      
@@ -826,7 +836,7 @@ SimulatorApp.prototype.drawBorrowBox = function() {
          that.debtLab.doBorrow();
      };
      
-  
+    
    
      
      this.domRootContainer.htmlElement.appendChild(button1);
@@ -1294,7 +1304,9 @@ SimulatorApp.prototype.drawYearsPerMinute = function() {
 }
 
 
-
+/**
+ * Setup the Add to Lender Account Box for the UI.
+ */
 SimulatorApp.prototype.drawAddToLenderAccount = function() {
      var g = new createjs.Graphics();
      var that = this;
@@ -1317,6 +1329,13 @@ SimulatorApp.prototype.drawAddToLenderAccount = function() {
      button1.style.fontWeight = "bold";
      button1.style.textAlign = 'center';
      button1.style.backgroundColor = "#FF0000";
+     button1.onclick = function(e) {
+         that.debtLab.doAddToLenderAccount();
+         that.updateUI();
+     };
+     
+    
+     
      this.domRootContainer.htmlElement.appendChild(button1);
      this.domSubmitAddMoneyToLenderAccount = button1;
      
@@ -1684,20 +1703,23 @@ SimulatorApp.prototype.updateUI = function () {
         
     }
     
-    this.setAutoButton(this.debtLab.getAutoTargetMoneySupplyGrow(), this.domAutoGrowTargetMoneySupply);
-    this.setAutoButton(this.debtLab.getAutoCreatePublicMoneyFlag(), this.domAutoCreatePublicMoney);
+    this.setAutoButton(this.debtLab.getAutoTargetMoneySupplyGrow(), this.domAutoGrowTargetMoneySupply, "Auto On", "Auto Off");
+    this.setAutoButton(this.debtLab.getAutoCreatePublicMoneyFlag(), this.domAutoCreatePublicMoney, "Auto On", "Auto Off");
     
-    this.setAutoButton(this.debtLab.getAutoLenderSpendFlag(), this.domSubmitAutoSpend);
-    this.setAutoButton(this.debtLab.getAutoTaxLenderFlag(), this.domSubmitAutoTax);
-    this.setAutoButton(this.debtLab.getAutoAddToLenderAccountFlag(), this.domAutoAddMoneyToLenderAccount);
-    this.setAutoButton(this.debtLab.getAutoLendFromLenderDepositsFlag(), this.domAutoLendFromDeposits);
+    this.setAutoButton(this.debtLab.getAutoLenderSpendFlag(), this.domSubmitAutoSpend, "Auto On", "Auto Off");
+    this.setAutoButton(this.debtLab.getAutoTaxLenderFlag(), this.domSubmitAutoTax, "Auto On", "Auto Off");
+    
+    this.setAutoButton(this.debtLab.getAutoLendFromLenderDepositsFlag(), this.domAutoLendFromDeposits, "Auto On", "Auto Off");
+    
+    this.setAutoButton(this.debtLab.getDefaultOnPaybackFlag(), this.domSubmitDefault, "Defaulting On", "Default Off");
     
     // Public Money Box
     if(this.domCreatePublicMoneyAmount) {
         this.domCreatePublicMoneyAmount.value = "$ " + _.str.numberFormat(this.debtLab.getCreatePublicMoneyAmount(),0);
     }
+    
     if(this.domAutoCreatePublicMoney){
-        this.setAutoButton(this.debtLab.getAutoCreatePublicMoneyFlag(), this.domAutoCreatePublicMoney);
+        this.setAutoButton(this.debtLab.getAutoCreatePublicMoneyFlag(), this.domAutoCreatePublicMoney, "Auto On", "Auto Off");
     }
 
     // Current Money Supply
@@ -1757,16 +1779,27 @@ SimulatorApp.prototype.updateUI = function () {
          this.domInputLenderAccount.value = "$ " + _.str.numberFormat(this.debtLab.getLenderAccountBalance(), 0);
     }
 
+
+    // Add to lender account Box
+    if(this.domAddMoneyToLenderAccountAmount) {
+        this.domAddMoneyToLenderAccountAmount.value = "$ " + _.str.numberFormat(this.debtLab.getLenderAccountAddAmount(),0);
+    }
+    
+    if(this.domAutoAddMoneyToLenderAccount) {
+       this.setAutoButton(this.debtLab.getAutoAddToLenderAccountFlag(), this.domAutoAddMoneyToLenderAccount, "Auto On", "Auto Off");
+    }
+
+
     
 
 };
 
-SimulatorApp.prototype.setAutoButton = function(flag, button) {
+SimulatorApp.prototype.setAutoButton = function(flag, button, onText, offText) {
     if (flag) {
-       button.value = "Auto On";
+       button.value = onText;
        button.style.backgroundColor = "#00FF00";
     } else {
-       button.value = "Auto Off";
+       button.value = offText;
        button.style.backgroundColor = "#EEEEEE";
     }
 };
@@ -1832,6 +1865,14 @@ SimulatorApp.prototype.updateParameters = function() {
                                  this.domInputLenderAccount,
                                  100,
                                  10000000);
+    
+    
+    // Add to lender account amount
+    this.setIntPropertyFromInput(this.debtLab.setLenderAccountAddAmount,
+                            this.domAddMoneyToLenderAccountAmount,
+                            1,
+                            10000);
+   
     
     
 };

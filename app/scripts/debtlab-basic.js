@@ -293,7 +293,12 @@ function DebtLabBasic() {
 
 
 DebtLabBasic.prototype.stepSimulation = function () {
-    this.currDate = new Date(this.currDate.getTime() + this.DAY_MS);
+    if (this.yearsPerMinute > 9 ) {
+        this.multiplier = 1; // this.multiplier = 10;
+    } else {
+        this.multiplier = 1;
+    }
+    this.currDate = new Date(this.currDate.getTime() + (this.DAY_MS * this.multiplier));
     this.currentDayNumber += this.multiplier;
     // this.currentMoneySupply += 1;
     this.autoCounter += this.multiplier;
@@ -412,6 +417,9 @@ DebtLabBasic.prototype.setYearsPerMinute = function(value) {
 
 
 
+
+
+
 DebtLabBasic.prototype.setAutoLenderSpendFlag = function(value) {
     this.autoLenderSpendFlag = value;
 };
@@ -428,13 +436,7 @@ DebtLabBasic.prototype.getAutoTaxLenderFlag = function() {
     return this.autoTaxLenderFlag;
 };
 
-DebtLabBasic.prototype.setAutoAddToLenderAccountFlag = function(value) {
-    this.autoAddToLenderAccountFlag = value;
-};
 
-DebtLabBasic.prototype.getAutoAddToLenderAccountFlag = function() {
-    return this.autoAddToLenderAccountFlag;
-};
 
 DebtLabBasic.prototype.setAutoLendFromLenderDepositsFlag = function(value) {
     this.autoLendFromLenderDepositsFlag = value;
@@ -484,10 +486,12 @@ DebtLabBasic.prototype.getAutoCreatePublicMoneyFlag = function() {
     return this.autoCreatePublicMoneyFlag;
 };
 
+
+
 /**
  * Sets the amount of public money to add to money supply.
  * 
- * @param {String} value 
+ * @param {int} value 
  */
 DebtLabBasic.prototype.setCreatePublicMoneyAmount = function(value) {
     this.createPublicMoneyAmount = value;
@@ -496,7 +500,7 @@ DebtLabBasic.prototype.setCreatePublicMoneyAmount = function(value) {
 /**
  * Returns the current amount the simulator is using to add to money supply.
  * 
- * @returns {String} Current value of create public money amount.
+ * @returns {int} Current value of create public money amount.
  */
 DebtLabBasic.prototype.getCreatePublicMoneyAmount = function() {
     return this.createPublicMoneyAmount;
@@ -684,6 +688,91 @@ DebtLabBasic.prototype.getDebtToLenderTrend = function() {
     return this.debtToLenderTrend;
 }
 
+
+// ******* Lender Payback ********
+
+/**
+ * Sets the simulator to default on notes as they become due.
+ * 
+ * 
+ * @param {boolean} value 
+ */
+DebtLabBasic.prototype.setDefaultOnPaybackFlag = function(value) {
+    this.defaultOnPayBackFlag = value;
+};
+
+
+/**
+ * Returns a boolean indicating if the simulator is automatically
+ * defaulting on notes as they become due
+ * 
+ * @returns {boolean} current value of auto borrow flag.
+ */
+DebtLabBasic.prototype.getDefaultOnPaybackFlag = function() {
+    return this.defaultOnPayBackFlag;
+};
+
+
+
+// ***** Add to Lender Account ******
+
+/**
+ * Add to lender account box allows adding
+ * arbitrary or automatic money to lender's private account.
+ */
+DebtLabBasic.prototype.doAddToLenderAccount = function() {
+    this.setLenderAccountBalance(this.lenderAccountBalance += this.lenderAccountAddAmount);
+   
+    
+};
+
+
+
+/**
+ * Sets the amount to add to lender account.
+ * 
+ * @param {int} value 
+ */
+DebtLabBasic.prototype.setLenderAccountAddAmount = function(value) {
+    this.lenderAccountAddAmount = value;
+};
+
+/**
+ * Returns the amount to add to lender account.
+ * 
+ * @returns {int} the amount to add to lender account.
+ */
+DebtLabBasic.prototype.getLenderAccountAddAmount = function() {
+    return this.lenderAccountAddAmount;
+};
+
+
+
+/**
+ * Sets the simulator to automatically add to lender account
+ * as needed.
+ * 
+ * @param {boolean} value 
+ */
+DebtLabBasic.prototype.setAutoAddToLenderAccountFlag = function(value) {
+    this.autoAddToLenderAccountFlag = value;
+};
+
+
+/**
+ * Returns a boolean indicating if the simulator is automatically
+ * maintaining lender account.
+ * 
+ * @returns {boolean} current value of auto borrow flag.
+ */
+DebtLabBasic.prototype.getAutoAddToLenderAccountFlag = function() {
+    return this.autoAddToLenderAccountFlag;
+};
+
+
+
+
+
 // ******** Borrow *********
 
 /**Borrow money creates a note with the currently 
@@ -808,7 +897,12 @@ DebtLabBasic.prototype.handleAutoFlags = function() {
         
     }
     
-    
+    // Keep enough money in lender account to make a loan
+    if ( this.autoAddToLenderAccountFlag) {
+        if( this.lenderAccountBalance < this.noteAmount) {
+            this.doAddToLenderAccount();
+        }
+    }
     
     
     
