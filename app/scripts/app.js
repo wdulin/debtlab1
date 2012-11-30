@@ -62,6 +62,7 @@ function SimulatorApp() {
      this.running = false;
      this.RESIZABLE = false;
      this.DEBUG = false;
+     this.INDICATOR_FLASH_TIME = 500;
      
     /**
      * Date display
@@ -77,6 +78,9 @@ function SimulatorApp() {
     // TODO: this will be used for running simulation in larger chunks of days 
     // to avoid very small time slices
     this.multiplier = 1;  
+    
+    // Flag to indicate if the payback indicator is busy
+    this.indicatorBusy = false;
                           
   
     
@@ -103,7 +107,7 @@ SimulatorApp.prototype.tick = function (timeElapsed) {
     
     //var delta = timeElapsed - this.lastTime;
     this.lastCount += timeElapsed;
-  
+    var that = this;
     
     if (this.running) {
         if (this.lastCount > this.interval) {
@@ -112,7 +116,26 @@ SimulatorApp.prototype.tick = function (timeElapsed) {
            this.lastCount = 0;
         }
         this.updateUI();
+        
+        
+//        async.whilst(
+//            that.debtLab.popNotesPayed,
+//            that.flashNotePayback
+//        );
+        
+        
+        if (!this.indicatorBusy) {
+            if(this.debtLab.popNotesPayed()) {
+                this.flashNotePayback();
+            }
+        
+            if(this.debtLab.popNotesDefaulted()) {
+                this.flashNoteDefault();
+            }
+        }
     }
+    
+    
     
  
 };
@@ -777,6 +800,34 @@ SimulatorApp.prototype.drawPaybackBox = function() {
      this.domSubmitDefault = button1;
      
      
+    // Note payback indicator
+    var div = document.createElement("div");
+    div.id = "showPayback";
+    
+    div.style.width = 160 + 'px';
+    div.style.height = 40 + 'px';
+    div.style.position = "absolute";
+    div.style.fontSize = 18 + "px";
+    div.style.fontWeight = "bold";
+    div.style.textAlign = 'center';
+    div.style.lineHeight = '40px';
+    div.style.borderStyle = 'solid';
+    div.style.borderColor = '#000000';
+    div.style.borderWidth = '2px';
+    
+    div.style.borderColor = '#000000';
+    div.style.color = "#FF0000";
+    div.style.backgroundColor = "#1AEB39";
+    div.innerHTML = "NOTE PAYED";
+    div.style.visibility = 'hidden';
+    
+    
+    
+    this.domRootContainer.htmlElement.appendChild(div);
+    this.domPaybackIndicator = div;
+    
+    
+    
     
      
      var c = this.boxPayback = new createjs.Container();
@@ -788,10 +839,14 @@ SimulatorApp.prototype.drawPaybackBox = function() {
      
      
       
-     pt = this.boxPayback.localToGlobal(18, 8);
+     var pt = this.boxPayback.localToGlobal(18, 8);
      this.domSubmitDefault.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
      this.domSubmitDefault.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
      
+     
+     pt = this.boxPayback.localToGlobal(18, 54);
+     this.domPaybackIndicator.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + "px";
+     this.domPaybackIndicator.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + "px";
      
      this.stage.update();
      
@@ -1111,7 +1166,7 @@ SimulatorApp.prototype.drawSpendBox = function() {
 
 
 /**
- * Setup the Lender Spend Box for the UI.
+ * Setup the Tax Spend Box for the UI.
  */
 SimulatorApp.prototype.drawTaxBox = function() {
      var g = new createjs.Graphics();
@@ -1151,6 +1206,7 @@ SimulatorApp.prototype.drawTaxBox = function() {
 
      this.domRootContainer.htmlElement.appendChild(button1);
      this.domSubmitTax = button1;
+     
      
      
      var auto = document.createElement("input");
@@ -1259,7 +1315,9 @@ SimulatorApp.prototype.drawTaxBox = function() {
      
 };
 
-
+/**
+ * Setup the Years Per Minute Box for the UI.
+ */
 SimulatorApp.prototype.drawYearsPerMinute = function() {
      var g = new createjs.Graphics();
      var that = this;
@@ -1980,6 +2038,47 @@ SimulatorApp.prototype.parseFormattedPercent = function(value) {
       }
       return parseFloat(value.substring(0,value.indexOf("%")),10)/100;
 };
+
+/**
+ * Flash the note payback indicator
+ */
+SimulatorApp.prototype.flashNotePayback = function() {
+    if(this.domPaybackIndicator) {
+        var that = this;
+        this.indicatorBusy=true;
+        this.domPaybackIndicator.style.borderColor = '#000000';
+        this.domPaybackIndicator.style.color = "#FF0000";
+        this.domPaybackIndicator.style.backgroundColor = "#1AEB39";
+        this.domPaybackIndicator.innerHTML = "NOTE PAYED";
+        this.domPaybackIndicator.style.visibility = 'visible';
+        setTimeout(function() {that.domPaybackIndicator.style.visibility = 'hidden';that.indicatorBusy=false;},this.INDICATOR_FLASH_TIME);
+        
+        
+    }
+    
+    
+    
+    
+};
+
+
+/**
+ * Flash the note default indicator
+ */
+SimulatorApp.prototype.flashNoteDefault = function() {
+    if(this.domPaybackIndicator) {
+        var that = this;
+        this.indicatorBusy=true;
+        this.domPaybackIndicator.style.borderColor = '#FFFFFF';
+        this.domPaybackIndicator.style.color = "#FFFFFF";
+        this.domPaybackIndicator.style.backgroundColor = "#000000";
+        this.domPaybackIndicator.innerHTML = "NOTE DEFAULT";
+        this.domPaybackIndicator.style.visibility = 'visible';
+        setTimeout(function() {that.domPaybackIndicator.style.visibility = 'hidden';that.indicatorBusy=false;},this.INDICATOR_FLASH_TIME);
+    }
+};
+
+
 
 
 var app = new SimulatorApp();

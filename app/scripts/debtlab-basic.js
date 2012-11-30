@@ -274,6 +274,27 @@ function DebtLabBasic() {
       */
       this.lastInterestPayment = 0;
       
+      
+      /**
+       * Notes payed queue - for use in 
+       * displaying a note payed event in 
+       * the UI.
+       */
+       this.notesPayedQueue = 0;
+       
+       /**
+       * Notes defaulted queue - for use in 
+       * displaying a note default event in 
+       * the UI.
+       */
+       this.notesDefaultedQueue = 0;
+      
+      
+    /**
+     * Notes outstanding array
+     */
+     this.notesOutstanding = [];
+     
     
     // Added fields
     
@@ -303,6 +324,7 @@ DebtLabBasic.prototype.stepSimulation = function () {
     // this.currentMoneySupply += 1;
     this.autoCounter += this.multiplier;
     
+    this.paybackNotes();
     
     // Don't call handleAutoFlags every step to
     // avoid rounding problems on yearly percentage rates
@@ -319,24 +341,48 @@ DebtLabBasic.prototype.stepSimulation = function () {
 /**
  * Payback note
  */
-DebtLabBasic.prototype.paybackNote = function() {
+DebtLabBasic.prototype.paybackNotes = function() {
     
     // TODO: Complete this feature
-    this.lastInterestPayment = 100;
-    
-    
-    // Handle lender auto tax
-    if(this.autoTaxLenderFlag) {
-        this.doTaxLender();
+    var principal = 0,
+        interest = 0;
+    for(var i = this.notesOutstanding.length - 1; i >= 0; i--) {
+        console.log("daynum:", this.currentDayNumber);
+        console.log("due:", this.notesOutstanding[i].due);
+        console.log("amount:", this.notesOutstanding[i].amount);
+        console.log("interest:", this.notesOutstanding[i].interest);
+        
+        if(this.notesOutstanding[i].due <= this.currentDayNumber ) {
+            principal = this.notesOutstanding[i].amount;
+            interest = this.notesOutstanding[i].interest;
+            
+            if(this.defaultOnPayBackFlag) {
+                this.debtToLender -= (principal + interest);
+                this.notesDefaultedQueue += 1;
+            } else {
+                this.lenderAccountBalance += (principal + interest);
+                this.addInterestPaid(interest);
+                this.debtToLender -= (principal + interest);
+                this.setMoneySupply(this.currentMoneySupply -= (principal + interest));
+                this.notesPayedQueue += 1;
+                this.lastInterestPayment = interest;
+                
+                // Handle lender auto tax
+                if(this.autoTaxLenderFlag) {
+                    this.doTaxLender();
+                }
+                
+                // Handle lender auto spend
+                if(this.autoLenderSpendFlag) {
+                    this.doLenderSpend();
+                }
+            }
+            // remove note
+            this.notesOutstanding.splice(i,1);
+        }
     }
-    
-    // Handle lender auto spend
-    if(this.autoLenderSpendFlag) {
-        this.doLenderSpend();
-    }
-    
-    
-}
+   
+};
 
 
 /**
@@ -410,6 +456,13 @@ DebtLabBasic.prototype.doResetToDefaults = function () {
     this.debtToLenderTrend = 0.0;
     
     this.lastInterestPayment = 0;
+    
+    this.notesPayedQueue = 0;
+       
+    this.notesDefaultedQueue = 0;
+    
+    // clear notes outstanding
+    this.notesOutstanding = [];
 
  
 };
@@ -687,7 +740,7 @@ DebtLabBasic.prototype.setDebtToLender = function(value) {
  * @returns {int} current debt to lender.
  */
 DebtLabBasic.prototype.getDebtToLender = function() {
-    return this.interestPaid;
+    return this.debtToLender;
 };
 
 /**
@@ -783,7 +836,6 @@ DebtLabBasic.prototype.getAutoLenderSpendFlag = function() {
  * Tax lender allows taxing of lender interest back into the money supply.
  */
 DebtLabBasic.prototype.doTaxLender = function() {
-    
     
     this.setLenderAccountBalance(this.lenderAccountBalance -= (this.lastInterestPayment * this.lenderTaxRate));
      
@@ -900,9 +952,35 @@ DebtLabBasic.prototype.getAutoAddToLenderAccountFlag = function() {
  * adds the amount to the money supply. 
  */
 DebtLabBasic.prototype.doBorrow = function() {
-    this.paybackNote();
+    // this.paybackNote();
     // TODO: Implement the borrow operations
     // alert("Borrowing Money");
+    
+    // Add note to notesOutstanding;
+    
+    if(this.lenderAccountBalance < this.noteAmount) {
+        if(this.autoAddToLenderAccountFlag) {
+            this.lenderAccountBalance += this.noteAmount;
+        } else {
+            return;
+        }
+    }
+    
+    var interest = Math.ceil((this.noteTermDays/365) * this.noteInterestRate * this.noteAmount);
+    
+    this.notesOutstanding.push({
+        due: this.currentDayNumber + this.noteTermDays,
+        amount: this.noteAmount,
+        interest: interest
+        
+    });
+    
+    this.lenderAccountBalance -= this.noteAmount;
+    this.currentMoneySupply += this.noteAmount;
+    this.debtToLender += (this.noteAmount + interest);
+    console.log(this.notesOutstanding.length);
+    console.log("Interest:" + interest);
+    
     
 };
 
@@ -1003,16 +1081,22 @@ DebtLabBasic.prototype.getLenderAccountBalance = function() {
  */
 DebtLabBasic.prototype.handleAutoFlags = function() {
     
+    
+    var limit = 20;
+    var counter = 0;
     // Calculate the number of virtual days that have passed
     var vDays = (this.multiplier * 365)/this.autoCountInterval;
     
     // Auto Public Money
-    if( this.autoCreatePublicMoneyFlag && (this.currentMoneySupply < this.targetMoneySupply)) {
-        this.doCreatePublicMoney();
+    if( this.autoCreatePublicMoneyFlag) {
+       while((this.currentMoneySupply < this.targetMoneySupply) && (counter < limit)) {
+          this.doCreatePublicMoney();
+          counter++;
+       }
     }
     
     // Auto Target Money Supply
-    if( this.autoTargetMoneySupplyGrowFlag) {
+    if (this.autoTargetMoneySupplyGrowFlag) {
         this.targetMoneySupply += ((this.targetMoneySupply * this.targetMoneySupplyGrowthRate) / vDays);
         
     }
@@ -1024,11 +1108,49 @@ DebtLabBasic.prototype.handleAutoFlags = function() {
         }
     }
     
-    
+    counter = 0;
+    // Auto borrow to maintain money supply
+    if ( this.autoBorrowFlag) {
+        while((this.targetMoneySupply > this.currentMoneySupply) && (counter < limit)) {
+            counter++;
+            this.doBorrow();
+        }
+    }
     
 
 };
 
+
+/**
+ * When called this returns true if the notesPayedQueue
+ * is greater than 0. It then decrements the queue.
+ */
+DebtLabBasic.prototype.popNotesPayed = function() {
+    
+    if (this.notesPayedQueue > 0) {
+        this.notesPayedQueue -= 1;
+        return true;
+    } else {
+        return false;
+    }
+    
+};
+
+/**
+ * When called this returns true if the notesDefaultedQueue
+ * is greater than 0. It then decrements the queue.
+ */
+DebtLabBasic.prototype.popNotesDefaulted = function() {
+    if ( this.notesDefaultedQueue > 0) {
+        this.notesDefaultedQueue -= 1;
+        return true;
+    } else {
+        return false;
+    }
+};
+
+       
+   
 
 DebtLabBasic.prototype.AverageArray = function(ar) {
     var sum = 0.0;
