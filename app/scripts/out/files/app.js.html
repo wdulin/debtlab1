@@ -1,0 +1,2178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>app.js</title>
+    <link rel="stylesheet" href="http:&#x2F;&#x2F;yui.yahooapis.com&#x2F;3.7.0&#x2F;build&#x2F;cssgrids&#x2F;cssgrids-min.css">
+    <link rel="stylesheet" href="..&#x2F;assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="..&#x2F;assets/css/main.css" id="site_styles">
+    <link rel="shortcut icon" type="image/png" href="..&#x2F;assets/favicon.png">
+    <script src="http:&#x2F;&#x2F;yui.yahooapis.com&#x2F;combo?3.7.0&#x2F;build&#x2F;yui&#x2F;yui-min.js"></script>
+</head>
+<body class="yui3-skin-sam">
+
+<div id="doc">
+    <div id="hd" class="yui3-g header">
+        <div class="yui3-u-3-4">
+            
+                <h1><img src="..&#x2F;assets/css/logo.png" title=""></h1>
+            
+        </div>
+        <div class="yui3-u-1-4 version">
+            <em>API Docs for: </em>
+        </div>
+    </div>
+    <div id="bd" class="yui3-g">
+
+        <div class="yui3-u-1-4">
+            <div id="docs-sidebar" class="sidebar apidocs">
+                <div id="api-list">
+    <h2 class="off-left">APIs</h2>
+    <div id="api-tabview" class="tabview">
+        <ul class="tabs">
+            <li><a href="#api-classes">Classes</a></li>
+            <li><a href="#api-modules">Modules</a></li>
+        </ul>
+
+        <div id="api-tabview-filter">
+            <input type="search" id="api-filter" placeholder="Type to filter APIs">
+        </div>
+
+        <div id="api-tabview-panel">
+            <ul id="api-classes" class="apis classes">
+            
+                <li><a href="..&#x2F;classes/DebtLabBasic.html">DebtLabBasic</a></li>
+            
+                <li><a href="..&#x2F;classes/SimulatorApp.html">SimulatorApp</a></li>
+            
+            </ul>
+
+            <ul id="api-modules" class="apis modules">
+            
+            </ul>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </div>
+        <div class="yui3-u-3-4">
+                <div id="api-options">
+        Show:
+        <label for="api-show-inherited">
+            <input type="checkbox" id="api-show-inherited" checked>
+            Inherited
+        </label>
+
+        <label for="api-show-protected">
+            <input type="checkbox" id="api-show-protected">
+            Protected
+        </label>
+
+        <label for="api-show-private">
+            <input type="checkbox" id="api-show-private">
+            Private
+        </label>
+        <label for="api-show-deprecated">
+            <input type="checkbox" id="api-show-deprecated">
+            Deprecated
+        </label>
+
+    </div>
+
+
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+                        <h1 class="file-heading">File: app.js</h1>
+
+<div class="file">
+    <pre class="code prettyprint linenums">
+
+function drawBackground(ctx) { &#x2F;&#x2F; Ruled paper
+    var STEP_Y = 12,
+    TOP_MARGIN = STEP_Y * 4,
+    LEFT_MARGIN = STEP_Y * 3,
+    i = ctx.canvas.height;
+    &#x2F;&#x2F; Horizontal lines
+    ctx.strokeStyle = &#x27;lightgray&#x27;;
+    ctx.lineWidth = 0.5;
+    while(i &gt; TOP_MARGIN) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(ctx.canvas.width, i);
+        ctx.stroke();
+        i -= STEP_Y;
+    }
+    &#x2F;&#x2F; Vertical line
+    ctx.strokeStyle = &#x27;rgba(100,0,0,0.3)&#x27;;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(LEFT_MARGIN,0);
+    ctx.lineTo(LEFT_MARGIN,ctx.canvas.height);
+    ctx.stroke();
+}       
+    
+    
+&#x2F;**
+* 
+* Main application control class for the Debt Simulator. Creates
+* an instance of DebtLabBasic and creates the UI interface and 
+* control loop for running the simulator.
+* 
+* @class SimulatorApp 
+* @constructor
+*&#x2F;
+function SimulatorApp() {
+     &#x2F;**
+     * Simulator running
+     *&#x2F;
+     this.running = false;
+     this.RESIZABLE = false;
+     this.DEBUG = false;
+     this.INDICATOR_FLASH_TIME = 500;
+     
+    &#x2F;**
+     * Date display
+     *&#x2F;
+    
+    this.title = &#x27;Debt Laboratory&#x27;;
+    this.lastTime = 0;
+    this.lastCount = 0;
+    this.tplTime = _.template(&quot;&lt;%= m %&gt;-&lt;%= d %&gt;-&lt;%= y %&gt;&quot;);
+    this.tplFps = _.template(&quot;fps:&lt;%= fps %&gt;&quot;);
+    this.interval = 50;
+    
+    &#x2F;&#x2F; TODO: this will be used for running simulation in larger chunks of days 
+    &#x2F;&#x2F; to avoid very small time slices
+    this.multiplier = 1;  
+    
+    &#x2F;&#x2F; Flag to indicate if the payback indicator is busy
+    this.indicatorBusy = false;
+                          
+  
+    
+    
+}
+
+
+    
+   
+
+
+SimulatorApp.prototype.pad = function (input, length, padding)
+{
+  while((input = input.toString()).length + (padding = padding.toString()).length &lt; length)
+  {
+    padding += padding;
+  }
+  return padding.substr(0, length - input.length) + input;
+};    
+    
+
+
+SimulatorApp.prototype.tick = function (timeElapsed) {
+    
+    &#x2F;&#x2F;var delta = timeElapsed - this.lastTime;
+    this.lastCount += timeElapsed;
+    var that = this;
+    
+    if (this.running) {
+        if (this.lastCount &gt; this.interval) {
+           this.debtLab.stepSimulation();
+           this.updateUI();
+           this.lastCount = 0;
+        }
+        this.updateUI();
+        
+        
+&#x2F;&#x2F;        async.whilst(
+&#x2F;&#x2F;            that.debtLab.popNotesPayed,
+&#x2F;&#x2F;            that.flashNotePayback
+&#x2F;&#x2F;        );
+        
+        
+        if (!this.indicatorBusy) {
+            if(this.debtLab.popNotesPayed()) {
+                this.flashNotePayback();
+            }
+        
+            if(this.debtLab.popNotesDefaulted()) {
+                this.flashNoteDefault();
+            }
+        }
+    }
+    
+    
+    
+ 
+};
+
+
+
+
+SimulatorApp.prototype.init = function () {
+    this.debtLab = new DebtLabBasic();
+    this.initUI();
+    this.debtLab.initClock(new Date(2012, 0, 1));
+    this.updateUI();
+    createjs.Ticker.useRAF = true;
+    createjs.Ticker.setFPS(60);
+    createjs.Ticker.addListener(this);
+};
+
+SimulatorApp.prototype.pauseSimulator = function (that) {
+    if (that.running) {
+        that.domButtonStart.value = &#x27;Go&#x27;;
+        that.running = false;
+    }
+};
+
+SimulatorApp.prototype.startSimulator = function (that) {
+    if (that.running === false) {
+        that.updateParameters();
+        that.domButtonStart.value = &#x27;Pause&#x27;;
+        that.running = true;
+    }
+};
+
+
+&#x2F;**
+ * Map DOM elements to variables
+ *&#x2F;
+SimulatorApp.prototype.initUI = function() {
+    var that = this;
+    this.domButtonStart = document.getElementById(&#x27;start-button&#x27;);
+    this.domButtonStart.onclick = function(e) {
+        that.running = that.running ? false : true;
+        if (that.running) {
+           that.updateParameters();
+           that.domButtonStart.value = &#x27;Pause&#x27;;
+        } else {
+           that.domButtonStart.value = &#x27;Go&#x27;;
+        }
+    };
+    
+            
+    this.domButtonReset = document.getElementById(&#x27;reset-button&#x27;);
+    this.domButtonReset.onclick = function(e) {
+       that.debtLab.doResetToDefaults();
+       that.debtLab.initClock(new Date(2012, 0 , 1));
+       that.updateUI();
+    };
+    
+    
+    
+    
+    this.interval = (60000 &#x2F; (365 * this.debtLab.getYearsPerMinute()));
+    
+    this.domDisplayMainTime = document.getElementById(&#x27;main-time&#x27;);
+    
+    this.domDisplayFps = document.getElementById(&#x27;fps-display&#x27;);
+    if (this.DEBUG) {
+        this.domDisplayFps.style.visibity = &quot;hidden&quot;;
+    }
+    this.mainCanvas = document.getElementById(&#x27;main-canvas&#x27;);
+    
+    
+    
+    
+    this.mainContext = this.mainCanvas.getContext(&#x27;2d&#x27;);
+    this.stage = new createjs.Stage(this.mainCanvas);
+    
+    &#x2F;&#x2F; Handle canvas resize
+    var resizeFunction = function() {
+        if (that.RESIZABLE) {
+           that.mainCanvas.style.width = (window.innerWidth - 100) + &#x27;px&#x27;;
+           that.mainCanvas.style.height = (window.innerHeight - 80) + &#x27;px&#x27;;
+           that.positionDOM(that);
+        }
+    };
+    window.addEventListener(&quot;resize&quot;, resizeFunction, false);
+    resizeFunction();   
+    
+    &#x2F;&#x2F; Setup Arrows
+
+    this.upMoneySupply = new createjs.BitmapAnimation(
+        new createjs.SpriteSheet({
+            &quot;animations&quot;: {&quot;disabled&quot;: [0], &quot;greenup&quot;: [1,6], &quot;yellowup&quot;: [7,12], &quot;redup&quot;: [13, 18]}, 
+            &quot;images&quot;: [&quot;app&#x2F;img&#x2F;up-sprite-small.png&quot;],
+            &quot;frames&quot;: {&quot;regX&quot;: 0, &quot;height&quot;: 52, &quot;count&quot;: 19, &quot;regY&quot;: 0, &quot;width&quot;: 32}
+        })
+    );
+    
+    
+        
+    this.mainContext.clearRect(0, 0, this.mainContext.canvas.width, this.mainContext.canvas.height);
+    
+    &#x2F;&#x2F;drawBackground(this.mainContext);
+    &#x2F;&#x2F;drawTitle(this.mainContext, this.title);
+    this.drawRuledBackground();
+    this.drawTitle();
+     
+   
+    
+    
+    this.domRootContainer = new createjs.DOMElement(document.getElementById(&quot;container&quot;));
+    this.stage.addChild(this.domRootContainer);
+    
+    this.drawCreatePublicMoney();
+    this.drawMoneySupplyTarget();
+    this.drawMoneySupply();
+    this.drawInterestPaid();
+    this.drawDebtToLender();
+    this.drawBorrowBox();
+    this.drawSpendBox();
+    this.drawTaxBox();
+    this.drawAddToLenderAccount();
+    this.drawLenderAccount();
+    this.drawPaybackBox();
+    this.drawLenderDeposits();
+    this.drawYearsPerMinute();
+   
+    
+};
+
+&#x2F;**
+ * Setup the Public Money Box for the UI.
+ *&#x2F;
+SimulatorApp.prototype.drawCreatePublicMoney = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill(&quot;#F5870A&quot;);
+     g.drawRoundRect(0, 0, 200, 90, 5);
+     var s = new createjs.Shape(g);
+     
+     &#x2F;&#x2F; var t = new createjs.Text(&quot;Create Public Money&quot;, &quot;bold 16px Arial&quot;, &quot;#000&quot;);
+     &#x2F;&#x2F; t.x = 100;
+     &#x2F;&#x2F; t.y = 4;
+     &#x2F;&#x2F; t.textAlign = &quot;center&quot;;
+     
+     &#x2F;&#x2F; Command for doCreatePublicMoney()
+     var button1 = document.createElement(&quot;input&quot;);
+     button1.id = &quot;submitCreatePublicMoneyAmount&quot;;
+     button1.type = &quot;button&quot;;
+     button1.value = &quot;Create Public Money&quot;;
+     button1.style.width = 160 + &#x27;px&#x27;;
+     button1.style.height = 36 + &#x27;px&#x27;;
+     button1.style.position = &quot;absolute&quot;;
+     button1.style.fontSize = 14 + &quot;px&quot;;
+     button1.style.fontWeight = &quot;bold&quot;;
+     button1.style.textAlign = &#x27;center&#x27;;
+     button1.style.backgroundColor = &quot;#FF0000&quot;;
+     button1.onclick = function(e) {
+         that.debtLab.doCreatePublicMoney();
+         that.updateUI();
+     };
+     this.domRootContainer.htmlElement.appendChild(button1);
+     this.domSubmitCreatePublicMoneyAmount = button1;
+     
+     &#x2F;&#x2F; Command for setting Auto Create Public Money
+     var auto = document.createElement(&quot;input&quot;);
+     auto.id = &quot;submitAutoCreatePublicMoney&quot;;
+     auto.type = &quot;button&quot;;
+     auto.value = &quot;Auto Off&quot;;
+     auto.style.width = 60 + &#x27;px&#x27;;
+     auto.style.height = 26 + &#x27;px&#x27;;
+     auto.style.position = &quot;absolute&quot;;
+     auto.style.fontSize = 12 + &quot;px&quot;;
+     auto.style.textAlign = &#x27;center&#x27;;
+     auto.style.backgroundColor = &quot;#EEEEEE&quot;;
+     auto.onclick = function(e) {
+         that.debtLab.setAutoCreatePublicMoneyFlag(!that.debtLab.getAutoCreatePublicMoneyFlag());
+         that.updateUI();
+     };
+     this.domRootContainer.htmlElement.appendChild(auto);
+     this.domAutoCreatePublicMoney = auto;
+     
+     
+     
+     
+    var input = document.createElement(&quot;input&quot;);
+    input.id = &quot;editCreatePublicMoneyAmount&quot;;
+    input.value = &quot;$ 100&quot;;
+    input.style.width = 60 + &#x27;px&#x27;;
+    input.style.position = &quot;absolute&quot;;
+    input.style.fontSize = 16 + &quot;px&quot;;
+    input.style.fontWeight = &quot;bold&quot;;
+    input.style.textAlign = &#x27;center&#x27;;
+    input.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     &#x2F;&#x2F;IE
+         else
+              key = e.which;     &#x2F;&#x2F;firefox
+        if (key == 13) {
+            console.log(&quot;Return&quot;);
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input);
+    this.domCreatePublicMoneyAmount = input;
+    
+     
+          
+     var c = this.boxCreatePublicMoney = new createjs.Container();
+     c.addChild(s);
+    &#x2F;&#x2F; c.addChild(t);
+         
+     
+     c.x = 55;
+     c.y = 110;
+     this.stage.addChild(c);
+     
+      
+     var pt = this.boxCreatePublicMoney.localToGlobal(120, 52);
+     this.domAutoCreatePublicMoney.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domAutoCreatePublicMoney.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;; 
+      
+      
+     pt = this.boxCreatePublicMoney.localToGlobal(22, 6);
+     this.domSubmitCreatePublicMoneyAmount.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domSubmitCreatePublicMoneyAmount.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+     
+     
+     pt = this.boxCreatePublicMoney.localToGlobal(36, 50);
+     this.domCreatePublicMoneyAmount.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domCreatePublicMoneyAmount.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+    
+     
+     
+     this.stage.update();
+     
+     
+}
+
+
+
+&#x2F;**
+ * Setup the Target Money Supply Box for the UI.
+ *&#x2F;
+SimulatorApp.prototype.drawMoneySupplyTarget = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill(&quot;#0000FF&quot;);
+     g.drawRoundRect(0, 0, 200, 120, 5);
+     var s = new createjs.Shape(g);
+     var t = new createjs.Text(&quot;Money Supply Target&quot;, &quot;bold 16px Arial&quot;, &quot;#000&quot;);
+     t.x = 100;
+     t.y = 4;
+     t.textAlign = &quot;center&quot;;
+     
+     var t2 = new createjs.Text(&quot;Growth Rate&quot;, &quot;bold 12px Arial&quot;, &quot;#000&quot;);
+     t2.x = 100;
+     t2.y = 60;
+     t2.textAlign = &quot;center&quot;;
+     
+    var input = document.createElement(&quot;input&quot;);
+    input.id = &quot;editMoneySupplyTarget&quot;;
+    input.value = &quot;$ 10,000&quot;;
+    input.style.width = 110 + &#x27;px&#x27;;
+    input.style.position = &quot;absolute&quot;;
+    input.style.fontSize = 16 + &quot;px&quot;;
+    input.style.fontWeight = &quot;bold&quot;;
+    input.style.textAlign = &#x27;center&#x27;;
+    input.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     &#x2F;&#x2F;IE
+         else
+              key = e.which;     &#x2F;&#x2F;firefox
+        if (key == 13) {
+            console.log(&quot;Return&quot;);
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input);
+    this.domInputMoneySupplyTarget = input;
+    
+     
+     
+    var auto = document.createElement(&quot;input&quot;);
+     auto.id = &quot;submitAutoGrowTargetMoneySupply&quot;;
+     auto.type = &quot;button&quot;;
+     auto.value = &quot;Auto Off&quot;;
+     auto.style.width = 60 + &#x27;px&#x27;;
+     auto.style.height = 26 + &#x27;px&#x27;;
+     auto.style.position = &quot;absolute&quot;;
+     auto.style.fontSize = 12 + &quot;px&quot;;
+     auto.style.textAlign = &#x27;center&#x27;;
+     auto.style.backgroundColor = &quot;#EEEEEE&quot;;
+     auto.onclick = function(e) {
+         that.debtLab.setAutoTargetMoneySupplyGrow(!that.debtLab.getAutoTargetMoneySupplyGrow());
+         that.updateUI();
+     };
+     this.domRootContainer.htmlElement.appendChild(auto);
+     this.domAutoGrowTargetMoneySupply = auto;
+     
+     
+     
+     
+     
+     
+     
+     
+    var input2 = document.createElement(&quot;input&quot;);
+    input2.id = &quot;editTargetMoneySupplyGrowthRate&quot;;
+    input2.value = &quot;5%&#x2F;year&quot;;
+    input2.style.width = 60 + &#x27;px&#x27;;
+    input2.style.position = &quot;absolute&quot;;
+    input2.style.fontSize = 12 + &quot;px&quot;;
+    input2.style.fontWeight = &quot;bold&quot;;
+    input2.style.textAlign = &#x27;center&#x27;;
+    input2.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    
+    input2.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     &#x2F;&#x2F;IE
+         else
+              key = e.which;     &#x2F;&#x2F;firefox
+        if (key == 13) {
+            console.log(&quot;Return&quot;);
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input2);
+    this.domTargetMoneySupplyGrowthRate = input2; 
+     
+     
+     
+          
+     var c = this.boxMoneySupplyTarget = new createjs.Container();
+     c.addChild(s);
+     c.addChild(t);
+     c.addChild(t2);
+         
+     
+     c.x = 55;
+     c.y = 210;
+     this.stage.addChild(c);
+     var pt = this.boxMoneySupplyTarget.localToGlobal(46, 30);
+     this.domInputMoneySupplyTarget.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domInputMoneySupplyTarget.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+    
+    
+     pt = this.boxMoneySupplyTarget.localToGlobal(120, 82);
+     this.domAutoGrowTargetMoneySupply.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domAutoGrowTargetMoneySupply.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;; 
+    
+     
+     pt = this.boxMoneySupplyTarget.localToGlobal(36, 80);
+     this.domTargetMoneySupplyGrowthRate.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domTargetMoneySupplyGrowthRate.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+    
+    
+    
+     
+     
+     this.stage.update();
+     
+     
+}
+
+
+&#x2F;**
+ * Setup the Money Supply Box for the UI.
+ *&#x2F;
+SimulatorApp.prototype.drawMoneySupply = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill(&quot;#460E56&quot;);
+     g.drawRoundRect(0, 0, 200, 120, 5);
+     var s = new createjs.Shape(g);
+     var t = new createjs.Text(&quot;Money Supply&quot;, &quot;bold 16px Arial&quot;, &quot;#FFF&quot;);
+     t.x = 116;
+     t.y = 25;
+     t.textAlign = &quot;center&quot;;
+     
+    var input = document.createElement(&quot;input&quot;);
+    input.id = &quot;editMoneySupply&quot;;
+    input.value = &quot;$ 10,000&quot;;
+    input.style.width = 110 + &#x27;px&#x27;;
+    input.style.position = &quot;absolute&quot;;
+    input.style.fontSize = 16 + &quot;px&quot;;
+    input.style.fontWeight = &quot;bold&quot;;
+    input.style.textAlign = &#x27;center&#x27;;
+    input.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     &#x2F;&#x2F;IE
+         else
+              key = e.which;     &#x2F;&#x2F;firefox
+        if (key == 13) {
+            console.log(&quot;Return&quot;);
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input);
+    this.domInputMoneySupply = input;
+    
+    
+    &#x2F;&#x2F; Create a div for displaying trend indicator
+    var div1 = document.createElement(&quot;div&quot;);
+    div1.id = &quot;displayMoneySupplyTrend&quot;;
+    div1.innerHTML = &quot;0.0%&quot;;
+    div1.style.width = 30 + &#x27;px&#x27;;
+    div1.style.position = &quot;absolute&quot;;
+    div1.style.fontSize = 12 + &quot;px&quot;;
+    div1.style.textAlign = &#x27;center&#x27;;
+    div1.style.backgroundColor = &quot;#aaaaaa&quot;
+    this.domRootContainer.htmlElement.appendChild(div1);
+    this.domMoneySupplyTrend = div1;
+    
+     
+          
+     var c = this.boxMoneySupply = new createjs.Container();
+     
+     this.upMoneySupply.x = 60;
+     this.upMoneySupply.y = 60;
+     
+     
+     c.addChild(s);
+     c.addChild(t);
+     c.addChild(this.upMoneySupply);
+     &#x2F;&#x2F; this.upMoneySupply.gotoAndStop(&quot;disabled&quot;);
+     
+     
+     c.x = 55;
+     c.y = 342;
+     this.stage.addChild(c);
+     
+     
+     var pt = this.boxMoneySupply.localToGlobal(60, 60);
+     this.domInputMoneySupply.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domInputMoneySupply.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+    
+     pt = this.boxMoneySupply.localToGlobal(10, 50);
+     this.domMoneySupplyTrend.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domMoneySupplyTrend.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+     
+     this.stage.update();
+     
+     
+}
+
+&#x2F;**
+ * Setup the Interest Paid Box for the UI.
+ *&#x2F;
+SimulatorApp.prototype.drawInterestPaid = function() {
+     var g = new createjs.Graphics();
+        g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill(&quot;#F562E9&quot;);
+     g.drawRoundRect(0, 0, 200, 90, 5);
+     var s = new createjs.Shape(g);
+     var t = new createjs.Text(&quot;Interest Paid&quot;, &quot;bold 16px Arial&quot;, &quot;#000&quot;);
+     t.x = 116;
+     t.y = 25;
+     t.textAlign = &quot;center&quot;;
+     
+     
+     
+     
+    
+     
+     
+     
+    var div = document.createElement(&quot;div&quot;);
+    div.id = &quot;showInterestPaid&quot;;
+    div.innerHTML = &quot;$ 00.00&quot;;
+    div.style.width = 110 + &#x27;px&#x27;;
+    div.style.position = &quot;absolute&quot;;
+    div.style.fontSize = 16 + &quot;px&quot;;
+    div.style.fontWeight = &quot;bold&quot;;
+    div.style.textAlign = &#x27;center&#x27;;
+    
+    
+    this.domRootContainer.htmlElement.appendChild(div);
+    this.domShowInterestPaid = div;
+    
+    &#x2F;&#x2F; Create a div for displaying trend indicator
+    var div1 = document.createElement(&quot;div&quot;);
+    div1.id = &quot;displayInterestPaidTrend&quot;;
+    div1.innerHTML = &quot;0.0%&quot;;
+    div1.style.width = 30 + &#x27;px&#x27;;
+    div1.style.position = &quot;absolute&quot;;
+    div1.style.fontSize = 12 + &quot;px&quot;;
+    div1.style.textAlign = &#x27;center&#x27;;
+    div1.style.backgroundColor = &quot;#aaaaaa&quot;
+    this.domRootContainer.htmlElement.appendChild(div1);
+    this.domInterestPaidTrend = div1;
+    
+    
+    
+     
+          
+     var c = this.boxShowInterest = new createjs.Container();
+     c.addChild(s);
+     c.addChild(t);
+         
+     
+     c.x = 55;
+     c.y = 472;
+     this.stage.addChild(c);
+     var pt = this.boxShowInterest.localToGlobal(60, 60);
+     this.domShowInterestPaid.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domShowInterestPaid.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+    
+     pt = this.boxShowInterest.localToGlobal(10, 37);
+     this.domInterestPaidTrend.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domInterestPaidTrend.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+     
+     this.stage.update();
+     
+     
+}
+
+&#x2F;**
+ * Setup the Debt to Lender Box for the UI.
+ *&#x2F;
+SimulatorApp.prototype.drawDebtToLender = function() {
+     var g = new createjs.Graphics();
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill(&quot;#F562E9&quot;);
+     g.drawRoundRect(0, 0, 200, 90, 5);
+     var s = new createjs.Shape(g);
+     var t = new createjs.Text(&quot;Debt To Lender&quot;, &quot;bold 16px Arial&quot;, &quot;#000&quot;);
+     t.x = 116;
+     t.y = 25;
+     t.textAlign = &quot;center&quot;;
+     
+    var div = document.createElement(&quot;div&quot;);
+    div.id = &quot;showShowDebtToLender&quot;;
+    div.innerHTML = &quot;$ 00.00&quot;;
+    div.style.width = 110 + &#x27;px&#x27;;
+    div.style.position = &quot;absolute&quot;;
+    div.style.fontSize = 16 + &quot;px&quot;;
+    div.style.fontWeight = &quot;bold&quot;;
+    div.style.textAlign = &#x27;center&#x27;;
+    
+    
+    this.domRootContainer.htmlElement.appendChild(div);
+    this.domShowDebtToLender = div;
+    
+      &#x2F;&#x2F; Create a div for displaying trend indicator
+    var div1 = document.createElement(&quot;div&quot;);
+    div1.id = &quot;displayDebtToLenderTrend&quot;;
+    div1.innerHTML = &quot;0.0%&quot;;
+    div1.style.width = 30 + &#x27;px&#x27;;
+    div1.style.position = &quot;absolute&quot;;
+    div1.style.fontSize = 12 + &quot;px&quot;;
+    div1.style.textAlign = &#x27;center&#x27;;
+    div1.style.backgroundColor = &quot;#aaaaaa&quot;
+    this.domRootContainer.htmlElement.appendChild(div1);
+    this.domDebtToLenderTrend = div1;
+    
+          
+     var c = this.boxShowDebtToLender = new createjs.Container();
+     c.addChild(s);
+     c.addChild(t);
+         
+     
+     c.x = 55;
+     c.y = 572;
+     this.stage.addChild(c);
+     var pt = this.boxShowDebtToLender.localToGlobal(60, 60);
+     this.domShowDebtToLender.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domShowDebtToLender.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+    
+     pt = this.boxShowDebtToLender.localToGlobal(10, 37);
+     this.domDebtToLenderTrend.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domDebtToLenderTrend.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+     
+     this.stage.update();
+     
+     
+};
+
+&#x2F;**
+ * Setup the Payback Box for the UI.
+ *&#x2F;
+SimulatorApp.prototype.drawPaybackBox = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill(&quot;#5E555D&quot;);
+     
+     
+     g.moveTo(0,0);
+     g.lineTo(190, 0);
+     g.lineTo(210, 50);
+     g.lineTo(190, 100);
+     g.lineTo(0, 100);
+     g.closePath();
+        
+     
+     var s = new createjs.Shape(g);
+     
+         
+     
+     var button1 = document.createElement(&quot;input&quot;);
+     button1.id = &quot;submitDefault&quot;;
+     button1.type = &quot;button&quot;;
+     button1.value = &quot;Default Off&quot;;
+     button1.style.width = 160 + &#x27;px&#x27;;
+     button1.style.height = 40 + &#x27;px&#x27;;
+     button1.style.position = &quot;absolute&quot;;
+     button1.style.fontSize = 14 + &quot;px&quot;;
+     button1.style.fontWeight = &quot;bold&quot;;
+     button1.style.textAlign = &#x27;center&#x27;;
+     button1.style.backgroundColor = &quot;#aaaaaa&quot;;
+     button1.onclick = function(e) {
+         that.debtLab.setDefaultOnPaybackFlag(!that.debtLab.getDefaultOnPaybackFlag());
+         that.updateUI();
+     };
+     
+     
+     this.domRootContainer.htmlElement.appendChild(button1);
+     this.domSubmitDefault = button1;
+     
+     
+    &#x2F;&#x2F; Note payback indicator
+    var div = document.createElement(&quot;div&quot;);
+    div.id = &quot;showPayback&quot;;
+    
+    div.style.width = 160 + &#x27;px&#x27;;
+    div.style.height = 40 + &#x27;px&#x27;;
+    div.style.position = &quot;absolute&quot;;
+    div.style.fontSize = 18 + &quot;px&quot;;
+    div.style.fontWeight = &quot;bold&quot;;
+    div.style.textAlign = &#x27;center&#x27;;
+    div.style.lineHeight = &#x27;40px&#x27;;
+    div.style.borderStyle = &#x27;solid&#x27;;
+    div.style.borderColor = &#x27;#000000&#x27;;
+    div.style.borderWidth = &#x27;2px&#x27;;
+    
+    div.style.borderColor = &#x27;#000000&#x27;;
+    div.style.color = &quot;#FF0000&quot;;
+    div.style.backgroundColor = &quot;#1AEB39&quot;;
+    div.innerHTML = &quot;NOTE PAYED&quot;;
+    div.style.visibility = &#x27;hidden&#x27;;
+    
+    
+    
+    this.domRootContainer.htmlElement.appendChild(div);
+    this.domPaybackIndicator = div;
+    
+    
+    
+    
+     
+     var c = this.boxPayback = new createjs.Container();
+     c.addChild(s);
+    
+     c.x = 405;
+     c.y = 168;
+     this.stage.addChild(c);
+     
+     
+      
+     var pt = this.boxPayback.localToGlobal(18, 8);
+     this.domSubmitDefault.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domSubmitDefault.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+     
+     
+     pt = this.boxPayback.localToGlobal(18, 54);
+     this.domPaybackIndicator.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domPaybackIndicator.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+     
+     this.stage.update();
+     
+     
+};
+
+
+
+
+&#x2F;**
+ * Setup the Borrow Box for the UI.
+ *&#x2F;
+SimulatorApp.prototype.drawBorrowBox = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill(&quot;#62B3F5&quot;);
+     
+     g.moveTo(0,50);
+     g.lineTo(20,0);
+     g.lineTo(210,0);
+     g.lineTo(210,100);
+     g.lineTo(20,100);
+     g.closePath();
+        
+     
+     var s = new createjs.Shape(g);
+     
+     var button1 = document.createElement(&quot;input&quot;);
+     button1.id = &quot;submitBorrow&quot;;
+     button1.type = &quot;button&quot;;
+     button1.value = &quot;Borrow&quot;;
+     button1.style.width = 160 + &#x27;px&#x27;;
+     button1.style.height = 40 + &#x27;px&#x27;;
+     button1.style.position = &quot;absolute&quot;;
+     button1.style.fontSize = 14 + &quot;px&quot;;
+     button1.style.fontWeight = &quot;bold&quot;;
+     button1.style.textAlign = &#x27;center&#x27;;
+     button1.style.backgroundColor = &quot;#FF0000&quot;;
+     button1.onclick = function(e) {
+         that.debtLab.doBorrow();
+         that.updateUI();
+     };
+     
+
+    
+   
+     
+     this.domRootContainer.htmlElement.appendChild(button1);
+     this.domSubmitBorrow = button1;
+     
+     
+     var auto = document.createElement(&quot;input&quot;);
+     auto.id = &quot;submitAutoBorrow&quot;;
+     auto.type = &quot;button&quot;;
+     auto.value = &quot;Auto Off&quot;;
+     auto.style.width = 60 + &#x27;px&#x27;;
+     auto.style.height = 26 + &#x27;px&#x27;;
+     auto.style.position = &quot;absolute&quot;;
+     auto.style.fontSize = 12 + &quot;px&quot;;
+     auto.style.textAlign = &#x27;center&#x27;;
+     auto.style.backgroundColor = &quot;#00FF00&quot;;
+     auto.onclick = function(e) {
+         that.debtLab.setAutoBorrowFlag(!that.debtLab.getAutoBorrowFlag());
+         that.updateUI();
+     };
+    
+        
+     this.domRootContainer.htmlElement.appendChild(auto);
+     this.domSubmitAutoBorrow = auto;
+     
+     
+   
+   
+     
+     
+    var input2 = document.createElement(&quot;input&quot;);
+    input2.id = &quot;editAutoBorrowAmount&quot;;
+    input2.value = &quot;$ 100&quot;;
+    input2.style.width = 50 + &#x27;px&#x27;;
+    input2.style.position = &quot;absolute&quot;;
+    input2.style.fontSize = 12 + &quot;px&quot;;
+    input2.style.fontWeight = &quot;bold&quot;;
+    input2.style.textAlign = &#x27;center&#x27;;
+    input2.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    input2.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     &#x2F;&#x2F;IE
+         else
+              key = e.which;     &#x2F;&#x2F;firefox
+        if (key == 13) {
+            console.log(&quot;Return&quot;);
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input2);
+    this.domAutoBorrowAmount = input2;
+     
+     
+    var input = document.createElement(&quot;input&quot;);
+    input.id = &quot;editAutoBorrowPercent&quot;;
+    input.value = &quot;5 %&quot;;
+    input.style.width = 34 + &#x27;px&#x27;;
+    input.style.position = &quot;absolute&quot;;
+    input.style.fontSize = 12 + &quot;px&quot;;
+    input.style.fontWeight = &quot;bold&quot;;
+    input.style.textAlign = &#x27;center&#x27;;
+    input.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     &#x2F;&#x2F;IE
+         else
+              key = e.which;     &#x2F;&#x2F;firefox
+        if (key == 13) {
+            console.log(&quot;Return&quot;);
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input);
+    this.domAutoBorrowPercent = input; 
+     
+     
+     
+     var c = this.boxBorrow = new createjs.Container();
+     c.addChild(s);
+     c.x = 385;
+     c.y = 272;
+     this.stage.addChild(c);
+     
+     
+     var pt = this.boxBorrow.localToGlobal(144, 60);
+     this.domSubmitAutoBorrow.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domSubmitAutoBorrow.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;; 
+      
+      
+     pt = this.boxBorrow.localToGlobal(36, 10);
+     this.domSubmitBorrow.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domSubmitBorrow.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+     
+     
+     pt = this.boxBorrow.localToGlobal(30, 60);
+     this.domAutoBorrowAmount.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domAutoBorrowAmount.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+    
+     pt = this.boxBorrow.localToGlobal(94, 60);
+     this.domAutoBorrowPercent.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domAutoBorrowPercent.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+     
+     this.stage.update();
+     
+     
+};
+
+&#x2F;**
+ * Setup the Lender Spend Box for the UI.
+ *&#x2F;
+SimulatorApp.prototype.drawSpendBox = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill(&quot;#F2DEA0&quot;);
+     
+     g.moveTo(0,50);
+     g.lineTo(20,0);
+     g.lineTo(210,0);
+     g.lineTo(210,100);
+     g.lineTo(20,100);
+     g.closePath();
+        
+     
+     var s = new createjs.Shape(g);
+     
+         
+     
+     var button1 = document.createElement(&quot;input&quot;);
+     button1.id = &quot;submitSpend&quot;;
+     button1.type = &quot;button&quot;;
+     button1.value = &quot;Lender Spends&quot;;
+     button1.style.width = 160 + &#x27;px&#x27;;
+     button1.style.height = 40 + &#x27;px&#x27;;
+     button1.style.position = &quot;absolute&quot;;
+     button1.style.fontSize = 14 + &quot;px&quot;;
+     button1.style.fontWeight = &quot;bold&quot;;
+     button1.style.textAlign = &#x27;center&#x27;;
+     button1.style.backgroundColor = &quot;#FF0000&quot;;
+     button1.onclick = function(e) {
+         that.debtLab.doLenderSpend();
+         that.updateUI();
+     };
+    
+
+     this.domRootContainer.htmlElement.appendChild(button1);
+     this.domSubmitSpend = button1;
+     
+     
+     var auto = document.createElement(&quot;input&quot;);
+     auto.id = &quot;submitAutoSpend&quot;;
+     auto.type = &quot;button&quot;;
+     auto.value = &quot;Auto Off&quot;;
+     auto.style.width = 60 + &#x27;px&#x27;;
+     auto.style.height = 26 + &#x27;px&#x27;;
+     auto.style.position = &quot;absolute&quot;;
+     auto.style.fontSize = 12 + &quot;px&quot;;
+     auto.style.textAlign = &#x27;center&#x27;;
+     auto.style.backgroundColor = &quot;#EEEEEE&quot;;
+     auto.onclick = function(e) {
+         that.debtLab.setAutoLenderSpendFlag(!that.debtLab.getAutoLenderSpendFlag());
+         that.updateUI();
+     };
+    
+ 
+     
+     
+     this.domRootContainer.htmlElement.appendChild(auto);
+     this.domSubmitAutoSpend = auto;
+     
+     
+     
+     
+    
+     
+     
+    var input = document.createElement(&quot;input&quot;);
+    input.id = &quot;editAutoSpendPercent&quot;;
+    input.value = &quot;5 %&quot;;
+    input.style.width = 34 + &#x27;px&#x27;;
+    input.style.position = &quot;absolute&quot;;
+    input.style.fontSize = 12 + &quot;px&quot;;
+    input.style.fontWeight = &quot;bold&quot;;
+    input.style.textAlign = &#x27;center&#x27;;
+    input.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     &#x2F;&#x2F;IE
+         else
+              key = e.which;     &#x2F;&#x2F;firefox
+        if (key == 13) {
+            console.log(&quot;Return&quot;);
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input);
+    this.domAutoSpendPercent = input; 
+     
+     
+     
+     var t1 = new createjs.Text(&quot;OF LAST&quot; , &quot;bold 12px Arial&quot;, &quot;#000&quot;);
+     t1.x = 105;
+     t1.y = 50;
+     t1.textAlign = &quot;center&quot;;
+     var t2 = new createjs.Text(&quot;INTEREST&quot;, &quot;bold 12px Arial&quot;, &quot;#000&quot;);
+     t2.x = 105;
+     t2.y = 64;
+     t2.textAlign = &quot;center&quot;;
+     
+     var t3 = new createjs.Text(&quot;PAYMENT&quot;, &quot;bold 12px Arial&quot;, &quot;#000&quot;);
+     t3.x = 105;
+     t3.y = 78;
+     t3.textAlign = &quot;center&quot;;
+     
+     var c = this.boxSpend = new createjs.Container();
+     c.addChild(s);
+     c.addChild(t1);
+     c.addChild(t2);
+     c.addChild(t3);
+     c.x = 385;
+     c.y = 376;
+     this.stage.addChild(c);
+     
+     
+     var pt = this.boxSpend.localToGlobal(144, 60);
+     this.domSubmitAutoSpend.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domSubmitAutoSpend.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;; 
+      
+      
+     pt = this.boxSpend.localToGlobal(36, 10);
+     this.domSubmitSpend.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domSubmitSpend.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+     
+     
+    
+    
+     pt = this.boxSpend.localToGlobal(32, 60);
+     this.domAutoSpendPercent.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domAutoSpendPercent.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+     
+     this.stage.update();
+     
+     
+};
+
+
+&#x2F;**
+ * Setup the Tax Spend Box for the UI.
+ *&#x2F;
+SimulatorApp.prototype.drawTaxBox = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill(&quot;#D9E835&quot;);
+     
+     g.moveTo(0,50);
+     g.lineTo(20,0);
+     g.lineTo(210,0);
+     g.lineTo(210,100);
+     g.lineTo(20,100);
+     g.closePath();
+        
+     
+     var s = new createjs.Shape(g);
+     
+         
+     
+     var button1 = document.createElement(&quot;input&quot;);
+     button1.id = &quot;submitTax&quot;;
+     button1.type = &quot;button&quot;;
+     button1.value = &quot;Tax Lender&quot;;
+     button1.style.width = 160 + &#x27;px&#x27;;
+     button1.style.height = 40 + &#x27;px&#x27;;
+     button1.style.position = &quot;absolute&quot;;
+     button1.style.fontSize = 14 + &quot;px&quot;;
+     button1.style.fontWeight = &quot;bold&quot;;
+     button1.style.textAlign = &#x27;center&#x27;;
+     button1.style.backgroundColor = &quot;#FF0000&quot;;
+      button1.onclick = function(e) {
+         that.debtLab.doTaxLender();
+         that.updateUI();
+     };
+    
+
+     this.domRootContainer.htmlElement.appendChild(button1);
+     this.domSubmitTax = button1;
+     
+     
+     
+     var auto = document.createElement(&quot;input&quot;);
+     auto.id = &quot;submitAutoTax&quot;;
+     auto.type = &quot;button&quot;;
+     auto.value = &quot;Auto Off&quot;;
+     auto.style.width = 60 + &#x27;px&#x27;;
+     auto.style.height = 26 + &#x27;px&#x27;;
+     auto.style.position = &quot;absolute&quot;;
+     auto.style.fontSize = 12 + &quot;px&quot;;
+     auto.style.textAlign = &#x27;center&#x27;;
+     auto.style.backgroundColor = &quot;#EEEEEE&quot;;
+     auto.onclick = function(e) {
+         that.debtLab.setAutoTaxLenderFlag(!that.debtLab.getAutoTaxLenderFlag());
+         that.updateUI();
+     };
+    
+     
+    
+    
+     
+     
+     this.domRootContainer.htmlElement.appendChild(auto);
+     this.domSubmitAutoTax = auto;
+     
+     
+     
+     
+    
+     
+     
+    var input = document.createElement(&quot;input&quot;);
+    input.id = &quot;editAutoTaxPercent&quot;;
+    input.value = &quot;5 %&quot;;
+    input.style.width = 34 + &#x27;px&#x27;;
+    input.style.position = &quot;absolute&quot;;
+    input.style.fontSize = 12 + &quot;px&quot;;
+    input.style.fontWeight = &quot;bold&quot;;
+    input.style.textAlign = &#x27;center&#x27;;
+    input.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     &#x2F;&#x2F;IE
+         else
+              key = e.which;     &#x2F;&#x2F;firefox
+        if (key == 13) {
+            console.log(&quot;Return&quot;);
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input);
+    this.domAutoTaxPercent = input; 
+     
+     
+     
+     var t1 = new createjs.Text(&quot;OF LAST&quot; , &quot;bold 12px Arial&quot;, &quot;#000&quot;);
+     t1.x = 105;
+     t1.y = 50;
+     t1.textAlign = &quot;center&quot;;
+     var t2 = new createjs.Text(&quot;INTEREST&quot;, &quot;bold 12px Arial&quot;, &quot;#000&quot;);
+     t2.x = 105;
+     t2.y = 64;
+     t2.textAlign = &quot;center&quot;;
+     
+     var t3 = new createjs.Text(&quot;PAYMENT&quot;, &quot;bold 12px Arial&quot;, &quot;#000&quot;);
+     t3.x = 105;
+     t3.y = 78;
+     t3.textAlign = &quot;center&quot;;
+     
+     var c = this.boxTax = new createjs.Container();
+     c.addChild(s);
+     c.addChild(t1);
+     c.addChild(t2);
+     c.addChild(t3);
+     c.x = 385;
+     c.y = 480;
+     this.stage.addChild(c);
+     
+     
+     var pt = this.boxTax.localToGlobal(144, 60);
+     this.domSubmitAutoTax.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domSubmitAutoTax.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;; 
+      
+      
+     pt = this.boxTax.localToGlobal(36, 10);
+     this.domSubmitTax.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domSubmitTax.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+     
+     
+    
+    
+     pt = this.boxTax.localToGlobal(32, 60);
+     this.domAutoTaxPercent.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domAutoTaxPercent.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+     
+     this.stage.update();
+     
+     
+};
+
+&#x2F;**
+ * Setup the Years Per Minute Box for the UI.
+ *&#x2F;
+SimulatorApp.prototype.drawYearsPerMinute = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill(&quot;#D5F09E&quot;);
+     g.drawRoundRect(0, 0, 200, 90, 5);
+     var s = new createjs.Shape(g);
+     var t = new createjs.Text(&quot;Years Per Minute&quot;, &quot;bold 16px Arial&quot;, &quot;#FFF&quot;);
+     t.x = 100;
+     t.y = 10;
+     t.textAlign = &quot;center&quot;;
+     
+    var input = document.createElement(&quot;input&quot;);
+    input.id = &quot;editYearsPerMinute&quot;;
+    input.value = &quot;2&quot;;
+    input.style.width = 60 + &#x27;px&#x27;;
+    input.style.position = &quot;absolute&quot;;
+    input.style.fontSize = 16 + &quot;px&quot;;
+    input.style.fontWeight = &quot;bold&quot;;
+    input.style.textAlign = &#x27;center&#x27;;
+    input.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     &#x2F;&#x2F;IE
+         else
+              key = e.which;     &#x2F;&#x2F;firefox
+        if (key == 13) {
+            console.log(&quot;Return&quot;);
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input);
+    this.domInputYearsPerMinute = input;
+    
+     
+          
+     var c = this.boxLenderAccount = new createjs.Container();
+     c.addChild(s);
+     c.addChild(t);
+         
+     
+     c.x = 715;
+     c.y = 90;
+     this.stage.addChild(c);
+     var pt = this.boxLenderAccount.localToGlobal(66, 40);
+     this.domInputYearsPerMinute.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domInputYearsPerMinute.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+    
+     
+     
+     this.stage.update();
+     
+     
+}
+
+
+&#x2F;**
+ * Setup the Add to Lender Account Box for the UI.
+ *&#x2F;
+SimulatorApp.prototype.drawAddToLenderAccount = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill(&quot;#D1A930&quot;);
+     g.drawRoundRect(0, 0, 220, 90, 5);
+     var s = new createjs.Shape(g);
+     
+     
+     
+     var button1 = document.createElement(&quot;input&quot;);
+     button1.id = &quot;submitCreatePublicMoneyAmount&quot;;
+     button1.type = &quot;button&quot;;
+     button1.value = &quot;Add To Lender Account&quot;;
+     button1.style.width = 180 + &#x27;px&#x27;;
+     button1.style.height = 36 + &#x27;px&#x27;;
+     button1.style.position = &quot;absolute&quot;;
+     button1.style.fontSize = 14 + &quot;px&quot;;
+     button1.style.fontWeight = &quot;bold&quot;;
+     button1.style.textAlign = &#x27;center&#x27;;
+     button1.style.backgroundColor = &quot;#FF0000&quot;;
+     button1.onclick = function(e) {
+         that.debtLab.doAddToLenderAccount();
+         that.updateUI();
+     };
+     
+    
+     
+     this.domRootContainer.htmlElement.appendChild(button1);
+     this.domSubmitAddMoneyToLenderAccount = button1;
+     
+     
+     var auto = document.createElement(&quot;input&quot;);
+     auto.id = &quot;submitAutoAddMoneyToLenderAccount&quot;;
+     auto.type = &quot;button&quot;;
+     auto.value = &quot;Auto Off&quot;;
+     auto.style.width = 60 + &#x27;px&#x27;;
+     auto.style.height = 26 + &#x27;px&#x27;;
+     auto.style.position = &quot;absolute&quot;;
+     auto.style.fontSize = 12 + &quot;px&quot;;
+     auto.style.textAlign = &#x27;center&#x27;;
+     auto.style.backgroundColor = &quot;#EEEEEE&quot;;
+     auto.onclick = function(e) {
+         that.debtLab.setAutoAddToLenderAccountFlag(!that.debtLab.getAutoAddToLenderAccountFlag());
+         that.updateUI();
+     };
+     
+    
+     this.domRootContainer.htmlElement.appendChild(auto);
+     this.domAutoAddMoneyToLenderAccount = auto;
+     
+     
+     
+     
+    var input = document.createElement(&quot;input&quot;);
+    input.id = &quot;editAddMoneyToLenderAccountAmount&quot;;
+    input.value = &quot;$ 100&quot;;
+    input.style.width = 80 + &#x27;px&#x27;;
+    input.style.position = &quot;absolute&quot;;
+    input.style.fontSize = 16 + &quot;px&quot;;
+    input.style.fontWeight = &quot;bold&quot;;
+    input.style.textAlign = &#x27;center&#x27;;
+    input.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     &#x2F;&#x2F;IE
+         else
+              key = e.which;     &#x2F;&#x2F;firefox
+        if (key == 13) {
+            console.log(&quot;Return&quot;);
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input);
+    this.domAddMoneyToLenderAccountAmount = input;
+    
+     
+          
+     var c = this.boxAddMoneyToLenderAccount = new createjs.Container();
+     c.addChild(s);
+    &#x2F;&#x2F; c.addChild(t);
+         
+     
+     c.x = 715;
+     c.y = 210;
+     this.stage.addChild(c);
+     
+      
+     var pt = this.boxAddMoneyToLenderAccount.localToGlobal(130, 52);
+     this.domAutoAddMoneyToLenderAccount.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domAutoAddMoneyToLenderAccount.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;; 
+      
+      
+     pt = this.boxAddMoneyToLenderAccount.localToGlobal(22, 6);
+     this.domSubmitAddMoneyToLenderAccount.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domSubmitAddMoneyToLenderAccount.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+     
+     
+     pt = this.boxAddMoneyToLenderAccount.localToGlobal(26, 50);
+     this.domAddMoneyToLenderAccountAmount.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domAddMoneyToLenderAccountAmount.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+    
+     
+     
+     this.stage.update();
+     
+     
+}
+
+&#x2F;**
+ * Setup the Lender Account Box for the UI.
+ *&#x2F;
+SimulatorApp.prototype.drawLenderAccount = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill(&quot;#0000FF&quot;);
+     g.drawRoundRect(0, 0, 240, 120, 5);
+     var s = new createjs.Shape(g);
+     var t = new createjs.Text(&quot;LENDER&#x27;S ACCOUNT&quot;, &quot;bold 16px Arial&quot;, &quot;#FFF&quot;);
+     t.x = 116;
+     t.y = 25;
+     t.textAlign = &quot;center&quot;;
+     
+    var input = document.createElement(&quot;input&quot;);
+    input.id = &quot;editLenderAccount&quot;;
+    input.value = &quot;$ 1,000&quot;;
+    input.style.width = 110 + &#x27;px&#x27;;
+    input.style.position = &quot;absolute&quot;;
+    input.style.fontSize = 16 + &quot;px&quot;;
+    input.style.fontWeight = &quot;bold&quot;;
+    input.style.textAlign = &#x27;center&#x27;;
+    input.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     &#x2F;&#x2F;IE
+         else
+              key = e.which;     &#x2F;&#x2F;firefox
+        if (key == 13) {
+            console.log(&quot;Return&quot;);
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input);
+    this.domInputLenderAccount = input;
+    
+     
+          
+     var c = this.boxLenderAccount = new createjs.Container();
+     c.addChild(s);
+     c.addChild(t);
+         
+     
+     c.x = 715;
+     c.y = 332;
+     this.stage.addChild(c);
+     var pt = this.boxLenderAccount.localToGlobal(60, 60);
+     this.domInputLenderAccount.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domInputLenderAccount.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+    
+     
+     
+     this.stage.update();
+     
+     
+}
+
+SimulatorApp.prototype.drawLenderDeposits = function() {
+     var g = new createjs.Graphics();
+     var that = this;
+     g.setStrokeStyle(1);
+     g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+     g.beginFill(&quot;#E8B407&quot;);
+     g.drawRoundRect(0, 0, 200, 120, 5);
+     var s = new createjs.Shape(g);
+     
+     
+     
+     
+     var button1 = document.createElement(&quot;input&quot;);
+     button1.id = &quot;submitLendFromDeposits&quot;;
+     button1.type = &quot;button&quot;;
+     button1.value = &quot;Lend From Deposits&quot;;
+     button1.style.width = 160 + &#x27;px&#x27;;
+     button1.style.height = 36 + &#x27;px&#x27;;
+     button1.style.position = &quot;absolute&quot;;
+     button1.style.fontSize = 14 + &quot;px&quot;;
+     button1.style.fontWeight = &quot;bold&quot;;
+     button1.style.textAlign = &#x27;center&#x27;;
+     button1.style.backgroundColor = &quot;#FF0000&quot;;
+     this.domRootContainer.htmlElement.appendChild(button1);
+     this.domSubmitLendFromDeposits = button1;
+     
+     
+     var auto = document.createElement(&quot;input&quot;);
+     auto.id = &quot;submitAutoLendFromDeposits&quot;;
+     auto.type = &quot;button&quot;;
+     auto.value = &quot;Auto Off&quot;;
+     auto.style.width = 60 + &#x27;px&#x27;;
+     auto.style.height = 26 + &#x27;px&#x27;;
+     auto.style.position = &quot;absolute&quot;;
+     auto.style.fontSize = 12 + &quot;px&quot;;
+     auto.style.textAlign = &#x27;center&#x27;;
+     auto.style.backgroundColor = &quot;#EEEEEE&quot;;
+     auto.onclick = function(e) {
+         that.debtLab.setAutoLendFromLenderDepositsFlag(!that.debtLab.getAutoLendFromLenderDepositsFlag());
+         that.updateUI();
+     };
+     
+     
+     
+     
+     this.domRootContainer.htmlElement.appendChild(auto);
+     this.domAutoLendFromDeposits = auto;
+     
+     
+     
+     
+    var input = document.createElement(&quot;input&quot;);
+    input.id = &quot;editLendFromDepositsBalance&quot;;
+    input.value = &quot;$ 10,000&quot;;
+    input.style.width = 80 + &#x27;px&#x27;;
+    input.style.position = &quot;absolute&quot;;
+    input.style.fontSize = 16 + &quot;px&quot;;
+    input.style.fontWeight = &quot;bold&quot;;
+    input.style.textAlign = &#x27;center&#x27;;
+    input.onclick = function(e) {
+        if(that.running) {
+          that.pauseSimulator(that);
+        }
+    };
+    input.onkeypress = function(e) {
+         var key;
+         if(window.event)
+              key = window.event.keyCode;     &#x2F;&#x2F;IE
+         else
+              key = e.which;     &#x2F;&#x2F;firefox
+        if (key == 13) {
+            console.log(&quot;Return&quot;);
+           if(that.running === false) {
+              that.startSimulator(that);
+           }
+        }
+    };
+    
+    this.domRootContainer.htmlElement.appendChild(input);
+    this.domLendFromDepositsBalance = input;
+    
+     
+          
+     var c = this.boxLenderDeposits = new createjs.Container();
+     c.addChild(s);
+    
+         
+     
+     var t = new createjs.Text(&quot;Deposited&quot;, &quot;bold 16px Arial&quot;, &quot;#000&quot;);
+     t.x = 100;
+     t.y = 42;
+     t.textAlign = &quot;center&quot;;
+     var t2 = new createjs.Text(&quot;With Lender&quot;, &quot;bold 16px Arial&quot;, &quot;#000&quot;);
+     t2.x = 100;
+     t2.y = 60;
+     t2.textAlign = &quot;center&quot;;
+     c.addChild(t);
+     c.addChild(t2);
+     
+     
+     c.x = 715;
+     c.y = 472;
+     this.stage.addChild(c);
+     
+      
+     var pt = this.boxLenderDeposits.localToGlobal(126, 82);
+     this.domAutoLendFromDeposits.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domAutoLendFromDeposits.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;; 
+      
+      
+     pt = this.boxLenderDeposits.localToGlobal(22, 6);
+     this.domSubmitLendFromDeposits.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domSubmitLendFromDeposits.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+     
+     
+     pt = this.boxLenderDeposits.localToGlobal(36, 80);
+     this.domLendFromDepositsBalance.style.left = Math.round(pt.x + this.mainCanvas.offsetLeft) + &quot;px&quot;;
+     this.domLendFromDepositsBalance.style.top = Math.round(pt.y + this.mainCanvas.offsetTop) + &quot;px&quot;;
+    
+     
+     
+     this.stage.update();
+     
+     
+}
+
+
+
+
+
+
+
+SimulatorApp.prototype.positionDOM = function (that) {
+     if(that.boxMoneySupply) {
+        var pt = that.boxMoneySupply.localToGlobal(105, 150);
+        that.domInputMoneySupply.htmlElement.style.left = Math.round(pt.x + that.mainCanvas.offsetLeft) + &quot;px&quot;;
+        that.domInputMoneySupply.htmlElement.style.top = Math.round(pt.y + that.mainCanvas.offsetTop) + &quot;px&quot;;
+        console.log(&quot;positionDOM&quot;);
+     }
+};
+
+
+SimulatorApp.prototype.drawTitle = function () {
+    
+    var txt = new createjs.Text(this.title, &#x27;48px Palantino&#x27;, &#x27;blue&#x27;);
+    txt.textAlign = &#x27;center&#x27;;
+    txt.textBaseLine = &#x27;middle&#x27;;
+    txt.x = this.mainCanvas.width&#x2F;2;
+    txt.y = 15;
+    txt.shadow = new createjs.Shadow(&quot;#000&quot;, 3, 3, 8);
+    this.stage.addChild(txt);
+   
+};
+
+SimulatorApp.prototype.drawRuledBackground = function () {
+    
+    var g = new createjs.Graphics();
+    var STEP_Y = 12,
+    TOP_MARGIN = STEP_Y * 4,
+    LEFT_MARGIN = STEP_Y * 3,
+    i = this.mainCanvas.height;
+    &#x2F;&#x2F; Horizontal lines
+    g.setStrokeStyle(0.5);
+    &#x2F;&#x2F; ctx.strokeStyle = &#x27;lightgray&#x27;;
+    &#x2F;&#x2F; ctx.lineWidth = 0.5;
+    g.beginStroke(&#x27;lightgray&#x27;);
+    while(i &gt; TOP_MARGIN) {
+        g.moveTo(0, i);
+        g.lineTo(this.mainCanvas.width, i);
+        &#x2F;&#x2F; ctx.stroke();
+        i -= STEP_Y;
+    }
+    &#x2F;&#x2F; Vertical line
+    g.setStrokeStyle(1);
+    g.beginStroke(&#x27;rgba(100,0,0,0.3)&#x27;);
+    &#x2F;&#x2F;ctx.strokeStyle = &#x27;rgba(100,0,0,0.3)&#x27;;
+    &#x2F;&#x2F;ctx.lineWidth = 1;
+    &#x2F;&#x2F;ctx.beginPath();
+    g.moveTo(LEFT_MARGIN,0);
+    g.lineTo(LEFT_MARGIN,this.mainCanvas.height);
+   &#x2F;&#x2F; ctx.stroke();
+   var bg = new createjs.Shape(g);
+   bg.x = 0;
+   bg.y = 0;
+   this.stage.addChild(bg);
+};
+
+
+
+&#x2F;**
+ * Update user interface to reflect simulator state.
+ *&#x2F;
+SimulatorApp.prototype.updateUI = function () {
+    
+    var d,m,y;
+    var currTime = this.debtLab.getDate();
+    d = this.pad(currTime.getDate(), 2, &#x27;0&#x27;);
+    m = this.pad((currTime.getMonth() + 1),2, &#x27;0&#x27;);
+    y = this.pad(currTime.getFullYear(), 4, &#x27;0&#x27;);
+    this.domDisplayMainTime.innerHTML = this.tplTime({m: m, d: d, y: y});
+    
+    if (this.DEBUG) {
+       this.domDisplayFps.innerHTML = this.tplFps({fps:createjs.Ticker.getFPS()});
+    }
+   
+    
+    if (this.domInputYearsPerMinute) {
+        this.domInputYearsPerMinute.value = this.debtLab.getYearsPerMinute();
+        
+    }
+    
+    this.setAutoButton(this.debtLab.getAutoTargetMoneySupplyGrow(), this.domAutoGrowTargetMoneySupply, &quot;Auto On&quot;, &quot;Auto Off&quot;);
+    this.setAutoButton(this.debtLab.getAutoCreatePublicMoneyFlag(), this.domAutoCreatePublicMoney, &quot;Auto On&quot;, &quot;Auto Off&quot;);
+    
+   
+    this.setAutoButton(this.debtLab.getAutoLendFromLenderDepositsFlag(), this.domAutoLendFromDeposits, &quot;Auto On&quot;, &quot;Auto Off&quot;);
+    
+    this.setAutoButton(this.debtLab.getDefaultOnPaybackFlag(), this.domSubmitDefault, &quot;Defaulting On&quot;, &quot;Default Off&quot;);
+    
+    &#x2F;&#x2F; Public Money Box
+    if(this.domCreatePublicMoneyAmount) {
+        this.domCreatePublicMoneyAmount.value = &quot;$ &quot; + _.str.numberFormat(this.debtLab.getCreatePublicMoneyAmount(),0);
+    }
+    
+    if(this.domAutoCreatePublicMoney){
+        this.setAutoButton(this.debtLab.getAutoCreatePublicMoneyFlag(), this.domAutoCreatePublicMoney, &quot;Auto On&quot;, &quot;Auto Off&quot;);
+    }
+
+    &#x2F;&#x2F; Current Money Supply
+    if(this.domInputMoneySupply) {
+         this.domInputMoneySupply.value = &quot;$ &quot; + _.str.numberFormat(this.debtLab.getMoneySupply(),0);
+    }
+    
+    if(this.domMoneySupplyTrend) {
+        this.domMoneySupplyTrend.innerHTML = _.str.numberFormat(this.debtLab.getMoneySupplyTrend() * 100, 1) + &quot;%&quot;;
+    } 
+    
+
+    &#x2F;&#x2F; Target Money Supply
+    if(this.domInputMoneySupplyTarget) {
+        this.domInputMoneySupplyTarget.value = &quot;$ &quot; + _.str.numberFormat(this.debtLab.getTargetMoneySupply(),0);
+    }
+    
+    if(this.domTargetMoneySupplyGrowthRate) {
+        this.domTargetMoneySupplyGrowthRate.value =  _.str.numberFormat(this.debtLab.getTargetMoneySupplyGrowthRate() * 100, 1) + &quot;%&#x2F;year&quot;;
+    }
+    
+    
+   
+    &#x2F;&#x2F; Interest Paid
+    if(this.domShowInterestPaid) {
+         this.domShowInterestPaid.innerHTML = &quot;$ &quot; + _.str.numberFormat(this.debtLab.getInterestPaid(),0);
+    }
+    
+    if(this.domInterestPaidTrend) {
+        this.domInterestPaidTrend.innerHTML = _.str.numberFormat(this.debtLab.getInterestPaidTrend() * 100, 1) + &quot;%&quot;;
+    } 
+    
+    &#x2F;&#x2F; Debt to Lender
+    if(this.domShowDebtToLender) {
+         this.domShowDebtToLender.innerHTML = &quot;$ &quot; + _.str.numberFormat(this.debtLab.getDebtToLender(),0);
+    }
+    
+    if(this.domDebtToLenderTrend) {
+        this.domDebtToLenderTrend.innerHTML = _.str.numberFormat(this.debtLab.getDebtToLenderTrend() * 100, 1) + &quot;%&quot;;
+    } 
+    
+    
+    &#x2F;&#x2F; Borrow money
+    if(this.domAutoBorrowAmount) {
+        this.domAutoBorrowAmount.value = &quot;$ &quot; + _.str.numberFormat(this.debtLab.getNoteAmount(),0);
+    }
+    
+    if(this.domAutoBorrowPercent) {
+        this.domAutoBorrowPercent.value =  _.str.numberFormat(this.debtLab.getNoteInterestRate() * 100, 1) + &quot;%&quot;;
+    }
+    if(this.domSubmitAutoBorrow) {
+       this.setAutoButton(this.debtLab.getAutoBorrowFlag(), this.domSubmitAutoBorrow, &quot;Auto On&quot;, &quot;Auto Off&quot;);
+    }
+
+    &#x2F;&#x2F; Lender Account Balance
+    if(this.domInputLenderAccount) {
+         this.domInputLenderAccount.value = &quot;$ &quot; + _.str.numberFormat(this.debtLab.getLenderAccountBalance(), 0);
+    }
+
+
+    &#x2F;&#x2F; Add to lender account Box
+    if(this.domAddMoneyToLenderAccountAmount) {
+        this.domAddMoneyToLenderAccountAmount.value = &quot;$ &quot; + _.str.numberFormat(this.debtLab.getLenderAccountAddAmount(),0);
+    }
+    
+    if(this.domAutoAddMoneyToLenderAccount) {
+       this.setAutoButton(this.debtLab.getAutoAddToLenderAccountFlag(), this.domAutoAddMoneyToLenderAccount, &quot;Auto On&quot;, &quot;Auto Off&quot;);
+    }
+
+    &#x2F;&#x2F; Lender Spend
+    if(this.domAutoSpendPercent) {
+        this.domAutoSpendPercent.value =  _.str.numberFormat(this.debtLab.getLenderSpendRate() * 100, 1) + &quot;%&quot;;
+    }
+    
+    if(this.domSubmitAutoSpend) {
+       this.setAutoButton(this.debtLab.getAutoLenderSpendFlag(), this.domSubmitAutoSpend, &quot;Auto On&quot;, &quot;Auto Off&quot;);
+    }
+    
+    
+    &#x2F;&#x2F; Tax Lender
+    if(this.domAutoTaxPercent) {
+        this.domAutoTaxPercent.value =  _.str.numberFormat(this.debtLab.getTaxRate() * 100, 1) + &quot;%&quot;;
+    }
+    
+    if(this.domSubmitAutoTax) {
+       this.setAutoButton(this.debtLab.getAutoTaxLenderFlag(), this.domSubmitAutoTax, &quot;Auto On&quot;, &quot;Auto Off&quot;);
+    }
+    
+       
+
+    
+
+};
+
+SimulatorApp.prototype.setAutoButton = function(flag, button, onText, offText) {
+    if (flag) {
+       button.value = onText;
+       button.style.backgroundColor = &quot;#00FF00&quot;;
+    } else {
+       button.value = offText;
+       button.style.backgroundColor = &quot;#EEEEEE&quot;;
+    }
+};
+
+&#x2F;**
+ * Update the simulator parameters from those set in
+ * the user interface.
+ *&#x2F;
+SimulatorApp.prototype.updateParameters = function() {
+    var value;
+    
+    
+    
+    &#x2F;&#x2F; Years per minute simulator speed setting
+    value = parseInt(this.domInputYearsPerMinute.value, 10);
+    if(value &gt; 0 &amp;&amp; value &lt; 51) {
+       this.debtLab.setYearsPerMinute(value);
+       
+    }
+    this.interval = (60000 &#x2F; (365 * this.debtLab.getYearsPerMinute()));
+    
+    
+    &#x2F;&#x2F; Create Public Money Amount
+    this.setIntPropertyFromInput(this.debtLab.setCreatePublicMoneyAmount,
+                            this.domCreatePublicMoneyAmount,
+                            1,
+                            10000);
+                            
+    &#x2F;&#x2F; Current Money Supply
+    this.setIntPropertyFromInput(this.debtLab.setMoneySupply,
+                                 this.domInputMoneySupply,
+                                 100,
+                                 1000000);
+                                 
+                                 
+    &#x2F;&#x2F; Target Money Supply
+    this.setIntPropertyFromInput(this.debtLab.setTargetMoneySupply,
+                                 this.domInputMoneySupplyTarget,
+                                 100,
+                                 10000000);
+                                 
+    this.setPercentPropertyFromInput(this.debtLab.setTargetMoneySupplyGrowthRate,
+                                   this.domTargetMoneySupplyGrowthRate,
+                                   -0.5,
+                                   2.0);
+                                   
+                                   
+    &#x2F;&#x2F; Default Note Amount
+    this.setIntPropertyFromInput(this.debtLab.setNoteAmount,
+                            this.domAutoBorrowAmount,
+                            1,
+                            10000);  
+    
+    &#x2F;&#x2F; Default Note Interest rate
+    this.setPercentPropertyFromInput(this.debtLab.setNoteInterestRate,
+                                   this.domAutoBorrowPercent,
+                                   -0.5,
+                                   2.0);
+                                   
+    &#x2F;&#x2F; Change lender account balance
+    &#x2F;&#x2F; Target Money Supply
+    this.setIntPropertyFromInput(this.debtLab.setLenderAccountBalance,
+                                 this.domInputLenderAccount,
+                                 100,
+                                 10000000);
+    
+    
+    &#x2F;&#x2F; Add to lender account amount
+    this.setIntPropertyFromInput(this.debtLab.setLenderAccountAddAmount,
+                            this.domAddMoneyToLenderAccountAmount,
+                            1,
+                            10000);
+                            
+    &#x2F;&#x2F; Lender spend rate
+    this.setPercentPropertyFromInput(this.debtLab.setLenderSpendRate,
+                                   this.domAutoSpendPercent,
+                                   0.0,
+                                   2.0);
+                                   
+     &#x2F;&#x2F; Lender tax rate
+    this.setPercentPropertyFromInput(this.debtLab.setTaxRate,
+                                   this.domAutoTaxPercent,
+                                   0.0,
+                                   2.0);
+
+};
+
+&#x2F;**
+ * Set the value of a float percent fraction property from an input field.
+ * 
+ * @param setter {setter function} property setter for object
+ * @param input {DOMElement} input DOM from user interface
+ * @param min {int} minimum value of parameter
+ * @param max {int} maximum value of parameter
+ *&#x2F;
+SimulatorApp.prototype.setPercentPropertyFromInput = function(setter, input, min, max) {
+    
+    var value = this.parseFormattedPercent(input.value);
+    console.log(&quot;Percent fraction: &quot; + value);
+    if(value &gt;= min &amp;&amp; value &lt;= max) {
+        setter.call(this.debtLab, value);
+    }
+};
+
+
+
+&#x2F;**
+ * Set the value of a integer object property from an input field.
+ * 
+ * @param setter {setter function} property setter for object
+ * @param input {DOMElement} input DOM from user interface
+ * @param min {int} minimum value of parameter
+ * @param max {int} maximum value of parameter
+ *&#x2F;
+SimulatorApp.prototype.setIntPropertyFromInput = function(setter, input, min, max) {
+    var value = this.parseFormattedInt(input.value);
+    if(value &gt;= min &amp;&amp; value &lt;= max) {
+        setter.call(this.debtLab, value);
+    }
+};
+
+&#x2F;**
+ * takes a string representation of a integer 
+ * value and returns the integer
+ * @param {String} string with embedded integer
+ *&#x2F;
+SimulatorApp.prototype.parseFormattedInt = function(value) {
+      return parseInt(value.replace(&#x2F;[\$,\,]&#x2F;g,&quot;&quot;), 10);
+};
+
+&#x2F;**
+ * takes a string representation of a percentage
+ * value and returns the double fractional value
+ * @param {String} string with embedded percentage
+ *&#x2F;
+SimulatorApp.prototype.parseFormattedPercent = function(value) {
+      if(value.indexOf(&quot;%&quot;)=== -1) {
+          value += &quot;%&quot;;
+      }
+      return parseFloat(value.substring(0,value.indexOf(&quot;%&quot;)),10)&#x2F;100;
+};
+
+&#x2F;**
+ * Flash the note payback indicator
+ *&#x2F;
+SimulatorApp.prototype.flashNotePayback = function() {
+    if(this.domPaybackIndicator) {
+        var that = this;
+        this.indicatorBusy=true;
+        this.domPaybackIndicator.style.borderColor = &#x27;#000000&#x27;;
+        this.domPaybackIndicator.style.color = &quot;#FF0000&quot;;
+        this.domPaybackIndicator.style.backgroundColor = &quot;#1AEB39&quot;;
+        this.domPaybackIndicator.innerHTML = &quot;NOTE PAYED&quot;;
+        this.domPaybackIndicator.style.visibility = &#x27;visible&#x27;;
+        setTimeout(function() {that.domPaybackIndicator.style.visibility = &#x27;hidden&#x27;;that.indicatorBusy=false;},this.INDICATOR_FLASH_TIME);
+        
+        
+    }
+    
+    
+    
+    
+};
+
+
+&#x2F;**
+ * Flash the note default indicator
+ *&#x2F;
+SimulatorApp.prototype.flashNoteDefault = function() {
+    if(this.domPaybackIndicator) {
+        var that = this;
+        this.indicatorBusy=true;
+        this.domPaybackIndicator.style.borderColor = &#x27;#FFFFFF&#x27;;
+        this.domPaybackIndicator.style.color = &quot;#FFFFFF&quot;;
+        this.domPaybackIndicator.style.backgroundColor = &quot;#000000&quot;;
+        this.domPaybackIndicator.innerHTML = &quot;NOTE DEFAULT&quot;;
+        this.domPaybackIndicator.style.visibility = &#x27;visible&#x27;;
+        setTimeout(function() {that.domPaybackIndicator.style.visibility = &#x27;hidden&#x27;;that.indicatorBusy=false;},this.INDICATOR_FLASH_TIME);
+    }
+};
+
+
+
+
+var app = new SimulatorApp();
+app.init();
+
+
+
+
+
+
+    </pre>
+</div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="..&#x2F;assets/vendor/prettify/prettify-min.js"></script>
+<script>prettyPrint();</script>
+<script src="..&#x2F;assets/js/yui-prettify.js"></script>
+<script src="..&#x2F;assets/../api.js"></script>
+<script src="..&#x2F;assets/js/api-filter.js"></script>
+<script src="..&#x2F;assets/js/api-list.js"></script>
+<script src="..&#x2F;assets/js/api-search.js"></script>
+<script src="..&#x2F;assets/js/apidocs.js"></script>
+</body>
+</html>

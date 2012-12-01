@@ -1,33 +1,3 @@
-/**
- * TODO: UI
- *   1) Sprite sheets for up and down errors.
- *   2) Trend Indicators working
- *   3) Sprite sheet for payback indicator
- *   4) Payback indicator
- *  
- *   
- *   
- *   9) updateParameters
- *  10) updateUI
- *  11) Trend indicator fields
- *  12) Button click events
- * 
- * DONE:
- *   5) Deposited with Lender Box
- *   6) Years per Minute controls 
- *   7) Auto buttons working
- *   8) Enter key restarts simulator
- *  
- * 
- * TODO: Simulation
- *   1) Borrow and Notes 
- * 
- * 
- * 
- */
-
-
-
 
 function drawBackground(ctx) { // Ruled paper
     var STEP_Y = 12,
@@ -54,7 +24,15 @@ function drawBackground(ctx) { // Ruled paper
 }       
     
     
-
+/**
+* 
+* Main application control class for the Debt Simulator. Creates
+* an instance of DebtLabBasic and creates the UI interface and 
+* control loop for running the simulator.
+* 
+* @class SimulatorApp 
+* @constructor
+*/
 function SimulatorApp() {
      /**
      * Simulator running
@@ -1571,6 +1549,10 @@ SimulatorApp.prototype.drawLenderAccount = function() {
      
 }
 
+
+/**
+ * Setup the Lender Deposits Box for the UI.
+ */
 SimulatorApp.prototype.drawLenderDeposits = function() {
      var g = new createjs.Graphics();
      var that = this;
@@ -1594,6 +1576,10 @@ SimulatorApp.prototype.drawLenderDeposits = function() {
      button1.style.fontWeight = "bold";
      button1.style.textAlign = 'center';
      button1.style.backgroundColor = "#FF0000";
+     button1.onclick = function(e) {
+         that.debtLab.doLendFromDeposits();
+         that.updateUI();
+     };
      this.domRootContainer.htmlElement.appendChild(button1);
      this.domSubmitLendFromDeposits = button1;
      
@@ -1630,6 +1616,9 @@ SimulatorApp.prototype.drawLenderDeposits = function() {
     input.style.fontSize = 16 + "px";
     input.style.fontWeight = "bold";
     input.style.textAlign = 'center';
+    input.style.backgroundColor = '#aaaaaa';
+    
+    /* Automatically maintained at 50% of Money Supply for now.
     input.onclick = function(e) {
         if(that.running) {
           that.pauseSimulator(that);
@@ -1648,6 +1637,8 @@ SimulatorApp.prototype.drawLenderDeposits = function() {
            }
         }
     };
+    
+    */
     
     this.domRootContainer.htmlElement.appendChild(input);
     this.domLendFromDepositsBalance = input;
@@ -1886,7 +1877,10 @@ SimulatorApp.prototype.updateUI = function () {
     }
     
        
-
+    if(this.domLendFromDepositsBalance) {
+        
+      this.domLendFromDepositsBalance.value = "$ " + _.str.numberFormat(this.debtLab.getLenderDepositsBalance(),0);
+    }
     
 
 };
