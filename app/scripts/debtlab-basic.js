@@ -101,7 +101,7 @@ function DebtLabBasic() {
 	/**
 	 * Default term in days for newly created notes.
 	 */
-    this.DEFAULT_NOTE_TERM_DAYS = 90;
+    this.DEFAULT_NOTE_TERM_DAYS = 365;
 	/**
 	 * Default rate at which target money supply should grow
 	 */
@@ -233,7 +233,7 @@ function DebtLabBasic() {
 	/**
 	 * Term in days for newly created notes
 	 */
-	this.noteTermDays = 90;
+	this.noteTermDays = 365;
 	/**
 	 * current goal for money supply level
 	 */

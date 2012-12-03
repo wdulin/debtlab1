@@ -627,9 +627,10 @@ SimulatorApp.prototype.drawInterestPaid = function() {
     div.innerHTML = "$ 00.00";
     div.style.width = 110 + 'px';
     div.style.position = "absolute";
-    div.style.fontSize = 16 + "px";
+    div.style.fontSize = 24 + "px";
     div.style.fontWeight = "bold";
     div.style.textAlign = 'center';
+    div.style.backgroundColor = "#dddddd";
     
     
     this.domRootContainer.htmlElement.appendChild(div);
@@ -692,10 +693,10 @@ SimulatorApp.prototype.drawDebtToLender = function() {
     div.innerHTML = "$ 00.00";
     div.style.width = 110 + 'px';
     div.style.position = "absolute";
-    div.style.fontSize = 16 + "px";
+    div.style.fontSize = 24 + "px";
     div.style.fontWeight = "bold";
     div.style.textAlign = 'center';
-    
+    div.style.backgroundColor = "#dddddd";
     
     this.domRootContainer.htmlElement.appendChild(div);
     this.domShowDebtToLender = div;
