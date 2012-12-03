@@ -487,7 +487,7 @@ DebtLabBasic.prototype.doResetToDefaults = function () {
     
     // clear notes outstanding
     this.notesOutstanding = [];
-
+    this.currDate = new Date(2000, 0 , 1);
  
 };
 

@@ -167,7 +167,7 @@ SimulatorApp.prototype.initUI = function() {
     this.domButtonReset = document.getElementById('reset-button');
     this.domButtonReset.onclick = function(e) {
        that.debtLab.doResetToDefaults();
-       that.debtLab.initClock(new Date(2012, 0 , 1));
+       that.debtLab.initClock(new Date(2000, 0 , 1));
        that.updateUI();
     };
     
