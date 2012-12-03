@@ -124,7 +124,7 @@ SimulatorApp.prototype.tick = function (timeElapsed) {
 SimulatorApp.prototype.init = function () {
     this.debtLab = new DebtLabBasic();
     this.initUI();
-    this.debtLab.initClock(new Date(2012, 0, 1));
+    this.debtLab.initClock(new Date(2000, 0, 1));
     this.updateUI();
     createjs.Ticker.useRAF = true;
     createjs.Ticker.setFPS(60);
@@ -1761,7 +1761,7 @@ SimulatorApp.prototype.updateUI = function () {
     var currTime = this.debtLab.getDate();
     d = this.pad(currTime.getDate(), 2, '0');
     m = this.pad((currTime.getMonth() + 1),2, '0');
-    y = this.pad(currTime.getFullYear(), 4, '0');
+    y = this.pad(currTime.getFullYear() - 2000, 4, '0'); // Make the year display 0000
     this.domDisplayMainTime.innerHTML = this.tplTime({m: m, d: d, y: y});
     
     if (this.DEBUG) {
