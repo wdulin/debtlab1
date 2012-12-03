@@ -381,7 +381,7 @@ DebtLabBasic.prototype.paybackNotes = function() {
                 if(deposits) {
                   this.lenderDepositsBalance += principal;
                 } else {
-                  this.lenderAccountBalanace += principal; 
+                  this.lenderAccountBalance += principal; 
                 }
                   
                 this.lenderAccountBalance += interest;
